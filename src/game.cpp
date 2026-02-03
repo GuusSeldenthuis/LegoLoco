@@ -1,52 +1,97 @@
 #include "raylib.h"
+#include "Tile.h"
+#include "Camera.h"
+#include "World.h"
+#include <cmath>
 
-class Grid {
-private:
-    int rows;
-    int cols;
-    int cellSize;
-    Color lineColor;
+Vector2 WorldToScreen(int gridX, int gridY, Vector2 cameraOffset, float zoom) {
+    float screenX = gridX * TILE_SIZE * zoom + cameraOffset.x;
+    float screenY = gridY * TILE_SIZE * zoom + cameraOffset.y;
+    return { screenX, screenY };
+}
 
-public:
-    Grid(int rows, int cols, int cellSize) 
-        : rows(rows), cols(cols), cellSize(cellSize), lineColor(DARKGRAY) {}
+Vector2 ScreenToWorld(Vector2 screenPos, Vector2 cameraOffset, float zoom) {
+    float gridX = (screenPos.x - cameraOffset.x) / (TILE_SIZE * zoom);
+    float gridY = (screenPos.y - cameraOffset.y) / (TILE_SIZE * zoom);
+    return { gridX, gridY };
+}
 
-    void Render() {
-        // Draw vertical lines
-        for (int x = 0; x <= cols; x++) {
-            DrawLine(x * cellSize, 0, x * cellSize, rows * cellSize, lineColor);
-        }
-        
-        // Draw horizontal lines
-        for (int y = 0; y <= rows; y++) {
-            DrawLine(0, y * cellSize, cols * cellSize, y * cellSize, lineColor);
-        }
-    }
-
-    int GetCellSize() const { return cellSize; }
-    int GetRows() const { return rows; }
-    int GetCols() const { return cols; }
-};
-
-// Main.cpp
 int main() {
-    const int screenWidth = 800;
-    const int screenHeight = 600;
-    
-    InitWindow(screenWidth, screenHeight, "Lego Loco - Grid");
+    const int screenWidth = 1280;
+    const int screenHeight = 720;
+
+    InitWindow(screenWidth, screenHeight, "openLegoLoco");
     SetTargetFPS(60);
-    
-    Grid grid(20, 25, 32); // 20 rows, 25 cols, 32px cells
-    
+
+    TileTextures tileTextures;
+    tileTextures.Load();
+
+    World world(60, 80);
+    GameCamera camera(50.0f, 50.0f);
+
+    TileType selectedTile = TileType::Grass;
+    const TileType tileTypes[] = { TileType::Empty, TileType::Grass, TileType::Road, TileType::Water, TileType::Track };
+    const int tileTypeCount = 5;
+    int selectedIndex = 1;
+
     while (!WindowShouldClose()) {
+        camera.Update();
+
+        // Tile selection with number keys
+        if (IsKeyPressed(KEY_ONE))   { selectedIndex = 0; selectedTile = tileTypes[0]; }
+        if (IsKeyPressed(KEY_TWO))   { selectedIndex = 1; selectedTile = tileTypes[1]; }
+        if (IsKeyPressed(KEY_THREE)) { selectedIndex = 2; selectedTile = tileTypes[2]; }
+        if (IsKeyPressed(KEY_FOUR))  { selectedIndex = 3; selectedTile = tileTypes[3]; }
+        if (IsKeyPressed(KEY_FIVE))  { selectedIndex = 4; selectedTile = tileTypes[4]; }
+
+        // Get hovered tile
+        Vector2 mousePos = GetMousePosition();
+        Vector2 worldPos = ScreenToWorld(mousePos, camera.offset, camera.zoom);
+        int hoverX = (int)floorf(worldPos.x);
+        int hoverY = (int)floorf(worldPos.y);
+        bool validHover = hoverX >= 0 && hoverX < world.GetCols() && hoverY >= 0 && hoverY < world.GetRows();
+
+        // Place tile with left click
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && validHover) {
+            world.SetTile(hoverX, hoverY, selectedTile);
+        }
+
+        // Remove tile with right click
+        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && validHover) {
+            world.SetTile(hoverX, hoverY, TileType::Empty);
+        }
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        
-        grid.Render();
-        
+
+        world.Render(camera, tileTextures);
+
+        // Draw hover highlight
+        if (validHover) {
+            float tileSize = TILE_SIZE * camera.zoom;
+            Vector2 pos = WorldToScreen(hoverX, hoverY, camera.offset, camera.zoom);
+            DrawRectangle((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, Color{255, 255, 255, 100});
+            DrawRectangleLines((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, WHITE);
+        }
+
+        // UI - Tile palette
+        DrawRectangle(10, 10, 150, 130, Color{0, 0, 0, 150});
+        DrawText("Tiles (1-5):", 20, 20, 16, WHITE);
+        for (int i = 0; i < tileTypeCount; i++) {
+            int y = 45 + i * 18;
+            Color textColor = (i == selectedIndex) ? YELLOW : WHITE;
+            const char* marker = (i == selectedIndex) ? "> " : "  ";
+            DrawText(TextFormat("%s%d: %s", marker, i + 1, GetTileName(tileTypes[i])), 20, y, 14, textColor);
+        }
+
+        // Debug info
+        DrawText(TextFormat("Grid: %d, %d", hoverX, hoverY), 10, screenHeight - 50, 16, DARKGRAY);
+        DrawText("LMB: Place | RMB: Remove | MMB: Pan | Scroll: Zoom", 10, screenHeight - 25, 16, GRAY);
+
         EndDrawing();
     }
-    
+
+    tileTextures.Unload();
     CloseWindow();
     return 0;
 }

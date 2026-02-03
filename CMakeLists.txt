@@ -10,9 +10,17 @@ set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
 add_subdirectory(raylib)
 
-# Main executable
-add_executable(${PROJECT_NAME} src/game.cpp)
+# Source files
+set(SOURCES
+    src/game.cpp
+    src/Tile.cpp
+    src/World.cpp
+)
 
+# Main executable
+add_executable(${PROJECT_NAME} ${SOURCES})
+
+target_include_directories(${PROJECT_NAME} PRIVATE src)
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
 
 # Platform-specific libraries

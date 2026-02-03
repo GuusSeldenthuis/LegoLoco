@@ -2,6 +2,10 @@
 
 A game project using raylib.
 
+## Assets
+
+Sprites are temporarily borrowed from [MartinSStewart/Lego-Loco-Remake](https://github.com/MartinSStewart/Lego-Loco-Remake) and will be replaced with original assets.
+
 ## Dependencies (Linux)
 
 ```bash
