@@ -1,0 +1,51 @@
+# openLegoLoco
+
+A game project using raylib.
+
+## Dependencies (Linux)
+
+```bash
+sudo apt install libx11-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev
+sudo apt install libgl1-mesa-dev libglu1-mesa-dev
+```
+
+## Clone
+
+```bash
+git clone --recursive https://github.com/yourusername/openLegoLoco.git
+```
+
+Or if already cloned without submodules:
+```bash
+git submodule update --init --recursive
+```
+
+## Build
+
+### Make
+```bash
+make
+```
+
+### CMake
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+
+Both options automatically build raylib from source on first run.
+
+## Run
+
+```bash
+./bin/lego_loco
+# or
+make run
+```
+
+## Clean
+
+```bash
+make clean      # Remove only the game binary
+make clean-all  # Remove binary and rebuild raylib
+```
