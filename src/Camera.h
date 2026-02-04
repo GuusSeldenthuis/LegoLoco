@@ -10,14 +10,14 @@ class GameCamera {
 public:
     Vector2 offset;
     float zoom;
-    float minZoom = 0.25f;
+    float minZoom = 1.0f;
     float maxZoom = 3.0f;
 
-    GameCamera(float startX, float startY) : offset{startX, startY}, zoom(1.0f) {}
+    GameCamera() : offset{0.0f, 0.0f}, zoom(1.0f) {}
 
     void Update() {
-        // Pan with middle mouse drag
-        if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE)) {
+        // Pan with middle mouse drag (only when zoomed in)
+        if (IsMouseButtonDown(MOUSE_BUTTON_MIDDLE) && zoom > 1.0f) {
             Vector2 delta = GetMouseDelta();
             offset.x += delta.x;
             offset.y += delta.y;
@@ -33,9 +33,14 @@ public:
             if (zoom < minZoom) zoom = minZoom;
             if (zoom > maxZoom) zoom = maxZoom;
 
-            Vector2 screenAfterZoom = WorldToScreen((int)worldBeforeZoom.x, (int)worldBeforeZoom.y, offset, zoom);
-            offset.x += mousePos.x - screenAfterZoom.x;
-            offset.y += mousePos.y - screenAfterZoom.y;
+            // Reset offset when at default zoom
+            if (zoom <= 1.0f) {
+                offset = {0.0f, 0.0f};
+            } else {
+                Vector2 screenAfterZoom = WorldToScreen((int)worldBeforeZoom.x, (int)worldBeforeZoom.y, offset, zoom);
+                offset.x += mousePos.x - screenAfterZoom.x;
+                offset.y += mousePos.y - screenAfterZoom.y;
+            }
         }
     }
 };
