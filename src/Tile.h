@@ -15,7 +15,6 @@ enum class TileType {
 
 struct Tile {
     TileType type = TileType::Empty;
-    int orientation = 0;  // 0, 1, 2, 3 = N, E, S, W
 };
 
 const char* GetTileName(TileType type);
