@@ -1,5 +1,7 @@
 # openLegoLoco
 
+![Screenshot](images/Screenshot_01.png)
+
 A game project using raylib.
 
 ## Assets
@@ -16,7 +18,7 @@ sudo apt install libgl1-mesa-dev libglu1-mesa-dev
 ## Clone
 
 ```bash
-git clone --recursive https://github.com/yourusername/openLegoLoco.git
+git clone --recursive https://github.com/GuusSeldenthuis/openLegoLoco.git
 ```
 
 Or if already cloned without submodules:

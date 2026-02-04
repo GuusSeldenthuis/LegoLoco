@@ -5,21 +5,21 @@ Recreating LEGO Loco (1998) in C++ with raylib.
 ## Milestone 1: Core Engine Foundation
 
 ### 1.1 Isometric Grid System
-- [ ] Implement isometric coordinate conversion (screen <-> world)
-- [ ] Render isometric grid with proper depth sorting
-- [ ] Camera panning with mouse drag
-- [ ] Camera zoom in/out
+- [x] Implement coordinate conversion (screen <-> world)
+- [x] Render grid with proper depth sorting
+- [x] Camera panning with mouse drag
+- [x] Camera zoom in/out
 
 ### 1.2 Tile System
-- [ ] Define tile data structure (type, orientation, connections)
-- [ ] Load and render placeholder tile sprites
-- [ ] Implement tile placement on grid
-- [ ] Tile removal/replacement
+- [x] Define tile data structure (type, orientation, connections)
+- [x] Load and render placeholder tile sprites
+- [x] Implement tile placement on grid
+- [x] Tile removal/replacement
 
 ### 1.3 World Management
-- [ ] World data structure (2D array of tiles)
-- [ ] Save world to file
-- [ ] Load world from file
+- [x] World data structure (2D array of tiles)
+- [x] Save world to file
+- [x] Load world from file
 
 ---
 
