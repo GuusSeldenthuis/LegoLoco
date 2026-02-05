@@ -26,10 +26,10 @@ Recreating LEGO Loco (1998) in C++ with raylib.
 ## Milestone 2: Buildings & Objects
 
 ### 2.1 Building Placement
-- [ ] Building data structure (size, type, properties)
-- [ ] Multi-tile building footprints
-- [ ] Placement validation (no overlap)
-- [ ] Building removal
+- [x] Building data structure (size, type, properties)
+- [x] Multi-tile building footprints
+- [x] Placement validation (no overlap)
+- [x] Building removal
 
 ### 2.2 Core Buildings
 - [ ] Houses (minifigure spawn points)

@@ -1,5 +1,6 @@
 #include "raylib.h"
 #include "Tile.h"
+#include "Building.h"
 #include "Camera.h"
 #include "World.h"
 #include <cmath>
@@ -35,6 +36,9 @@ int main() {
     TileTextures tileTextures;
     tileTextures.Load();
 
+    BuildingTextures buildingTextures;
+    buildingTextures.Load();
+
     // Calculate world size based on background resolution
     int worldCols = screenWidth / TILE_SIZE;
     int worldRows = screenHeight / TILE_SIZE;
@@ -45,6 +49,10 @@ int main() {
     const TileType tileTypes[] = { TileType::Empty, TileType::Grass, TileType::Road, TileType::Water, TileType::Track };
     const int tileTypeCount = 5;
     int selectedIndex = 1;
+
+    // Building selection
+    BuildingType selectedBuilding = BuildingType::None;
+    bool buildingMode = false;
 
     // Status message
     std::string statusMessage = "";
@@ -81,11 +89,14 @@ int main() {
         }
 
         // Tile selection with number keys
-        if (IsKeyPressed(KEY_ONE))   { selectedIndex = 0; selectedTile = tileTypes[0]; }
-        if (IsKeyPressed(KEY_TWO))   { selectedIndex = 1; selectedTile = tileTypes[1]; }
-        if (IsKeyPressed(KEY_THREE)) { selectedIndex = 2; selectedTile = tileTypes[2]; }
-        if (IsKeyPressed(KEY_FOUR))  { selectedIndex = 3; selectedTile = tileTypes[3]; }
-        if (IsKeyPressed(KEY_FIVE))  { selectedIndex = 4; selectedTile = tileTypes[4]; }
+        if (IsKeyPressed(KEY_ONE))   { selectedIndex = 0; selectedTile = tileTypes[0]; buildingMode = false; }
+        if (IsKeyPressed(KEY_TWO))   { selectedIndex = 1; selectedTile = tileTypes[1]; buildingMode = false; }
+        if (IsKeyPressed(KEY_THREE)) { selectedIndex = 2; selectedTile = tileTypes[2]; buildingMode = false; }
+        if (IsKeyPressed(KEY_FOUR))  { selectedIndex = 3; selectedTile = tileTypes[3]; buildingMode = false; }
+        if (IsKeyPressed(KEY_FIVE))  { selectedIndex = 4; selectedTile = tileTypes[4]; buildingMode = false; }
+
+        // Building selection
+        if (IsKeyPressed(KEY_SIX)) { selectedBuilding = BuildingType::RedHouse; buildingMode = true; }
 
         // Get hovered tile
         Vector2 mousePos = GetMousePosition();
@@ -94,13 +105,31 @@ int main() {
         int hoverY = (int)floorf(worldPos.y);
         bool validHover = hoverX >= 0 && hoverX < world.GetCols() && hoverY >= 0 && hoverY < world.GetRows();
 
-        // Place tile with left click
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && validHover) {
+        // Place tile or building with left click
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && validHover) {
+            if (buildingMode) {
+                world.PlaceBuilding(selectedBuilding, hoverX, hoverY);
+            } else {
+                world.SetTile(hoverX, hoverY, selectedTile);
+            }
+        }
+
+        // Continuous tile placement (drag) - only for tiles, not buildings
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && validHover && !buildingMode) {
             world.SetTile(hoverX, hoverY, selectedTile);
         }
 
-        // Remove tile with right click
-        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && validHover) {
+        // Remove tile or building with right click
+        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && validHover) {
+            if (buildingMode) {
+                world.RemoveBuilding(hoverX, hoverY);
+            } else {
+                world.SetTile(hoverX, hoverY, TileType::Empty);
+            }
+        }
+
+        // Continuous removal (drag) - only for tiles
+        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && validHover && !buildingMode) {
             world.SetTile(hoverX, hoverY, TileType::Empty);
         }
 
@@ -114,24 +143,46 @@ int main() {
         DrawTexturePro(background, bgSource, bgDest, {0, 0}, 0.0f, WHITE);
 
         world.Render(camera, tileTextures);
+        world.RenderBuildings(camera, buildingTextures);
 
         // Draw hover highlight
         if (validHover) {
             float tileSize = TILE_SIZE * camera.zoom;
             Vector2 pos = WorldToScreen(hoverX, hoverY, camera.offset, camera.zoom);
-            DrawRectangle((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, Color{255, 255, 255, 100});
-            DrawRectangleLines((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, WHITE);
+
+            if (buildingMode && selectedBuilding != BuildingType::None) {
+                // Get building dimensions for preview
+                Building preview = CreateBuilding(selectedBuilding, hoverX, hoverY);
+                float previewW = preview.width * tileSize;
+                float previewH = preview.height * tileSize;
+
+                // Check if placement is valid
+                bool canPlace = world.CanPlaceBuilding(preview);
+                Color highlightColor = canPlace ? Color{100, 255, 100, 100} : Color{255, 100, 100, 100};
+                Color outlineColor = canPlace ? GREEN : RED;
+
+                DrawRectangle((int)pos.x, (int)pos.y, (int)previewW, (int)previewH, highlightColor);
+                DrawRectangleLines((int)pos.x, (int)pos.y, (int)previewW, (int)previewH, outlineColor);
+            } else {
+                DrawRectangle((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, Color{255, 255, 255, 100});
+                DrawRectangleLines((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, WHITE);
+            }
         }
 
-        // UI - Tile palette
-        DrawRectangle(10, 10, 150, 130, Color{0, 0, 0, 150});
+        // UI - Tile/Building palette
+        DrawRectangle(10, 10, 160, 165, Color{0, 0, 0, 150});
         DrawText("Tiles (1-5):", 20, 20, 16, WHITE);
         for (int i = 0; i < tileTypeCount; i++) {
             int y = 45 + i * 18;
-            Color textColor = (i == selectedIndex) ? YELLOW : WHITE;
-            const char* marker = (i == selectedIndex) ? "> " : "  ";
+            Color textColor = (!buildingMode && i == selectedIndex) ? YELLOW : WHITE;
+            const char* marker = (!buildingMode && i == selectedIndex) ? "> " : "  ";
             DrawText(TextFormat("%s%d: %s", marker, i + 1, GetTileName(tileTypes[i])), 20, y, 14, textColor);
         }
+
+        DrawText("Buildings (6):", 20, 140, 16, WHITE);
+        Color houseColor = buildingMode ? YELLOW : WHITE;
+        const char* houseMarker = buildingMode ? "> " : "  ";
+        DrawText(TextFormat("%s6: %s", houseMarker, GetBuildingName(BuildingType::RedHouse)), 20, 160, 14, houseColor);
 
         // Debug info
         DrawRectangle(5, screenHeight - 55, screenWidth - 10, 50, Color{0, 0, 0, 150});
@@ -150,6 +201,7 @@ int main() {
 
     UnloadTexture(background);
     tileTextures.Unload();
+    buildingTextures.Unload();
     CloseWindow();
     return 0;
 }

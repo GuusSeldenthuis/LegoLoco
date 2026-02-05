@@ -13,6 +13,7 @@ void World::Clear() {
             tiles[y][x] = Tile{};
         }
     }
+    buildings.clear();
 }
 
 bool World::Save(const std::string& filepath) const {
@@ -143,4 +144,83 @@ void World::Render(GameCamera& camera, TileTextures& textures) {
             }
         }
     }
+}
+
+void World::RenderBuildings(GameCamera& camera, BuildingTextures& textures) {
+    // Render buildings sorted by Y position for proper depth
+    for (const Building& b : buildings) {
+        if (b.type == BuildingType::None) continue;
+
+        Vector2 pos = WorldToScreen(b.gridX, b.gridY, camera.offset, camera.zoom);
+
+        // Apply render offset (scaled by zoom)
+        pos.x += b.renderOffsetX * camera.zoom;
+        pos.y += b.renderOffsetY * camera.zoom;
+
+        if (textures.HasTexture(b.type)) {
+            Texture2D tex = textures.Get(b.type);
+            Rectangle source = { 0, 0, (float)tex.width, (float)tex.height };
+            Rectangle dest = { pos.x, pos.y, tex.width * camera.zoom, tex.height * camera.zoom };
+            DrawTexturePro(tex, source, dest, {0, 0}, 0.0f, WHITE);
+        }
+    }
+}
+
+bool World::CanPlaceBuilding(const Building& building) const {
+    // Check bounds
+    if (building.gridX < 0 || building.gridY < 0 ||
+        building.gridX + building.width > cols ||
+        building.gridY + building.height > rows) {
+        return false;
+    }
+
+    // Check overlap with existing buildings
+    for (const Building& existing : buildings) {
+        if (existing.type == BuildingType::None) continue;
+
+        // Check if footprints overlap
+        bool overlapX = building.gridX < existing.gridX + existing.width &&
+                        building.gridX + building.width > existing.gridX;
+        bool overlapY = building.gridY < existing.gridY + existing.height &&
+                        building.gridY + building.height > existing.gridY;
+
+        if (overlapX && overlapY) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool World::PlaceBuilding(BuildingType type, int gridX, int gridY) {
+    Building b = CreateBuilding(type, gridX, gridY);
+
+    if (!CanPlaceBuilding(b)) {
+        return false;
+    }
+
+    buildings.push_back(b);
+    return true;
+}
+
+bool World::RemoveBuilding(int gridX, int gridY) {
+    for (auto it = buildings.begin(); it != buildings.end(); ++it) {
+        // Check if the point is within the building's footprint
+        if (gridX >= it->gridX && gridX < it->gridX + it->width &&
+            gridY >= it->gridY && gridY < it->gridY + it->height) {
+            buildings.erase(it);
+            return true;
+        }
+    }
+    return false;
+}
+
+Building* World::GetBuildingAt(int gridX, int gridY) {
+    for (Building& b : buildings) {
+        if (gridX >= b.gridX && gridX < b.gridX + b.width &&
+            gridY >= b.gridY && gridY < b.gridY + b.height) {
+            return &b;
+        }
+    }
+    return nullptr;
 }
