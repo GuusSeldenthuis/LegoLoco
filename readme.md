@@ -1,6 +1,6 @@
 # openLegoLoco
 
-![Screenshot](images/Screenshot_01.png)
+![Screenshot](images/Screenshot_02.png)
 
 A game project using raylib.
 

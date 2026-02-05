@@ -8,13 +8,13 @@ Building CreateBuilding(BuildingType type, int gridX, int gridY) {
 
     switch (type) {
         case BuildingType::RedHouse:
-            b.width = 2;
-            b.height = 2;
-            // Texture is 48x58, footprint is 32x32
-            // Center horizontally: (48-32)/2 = 8px offset left
-            // Roof extends above: 58-32 = 26px offset up
-            b.renderOffsetX = -8;
-            b.renderOffsetY = -26;
+            b.width = 3;
+            b.height = 3;
+            // Texture is 48x58, footprint is 48x48 (3x3 tiles)
+            // No horizontal overhang (48px = 3 tiles exactly)
+            // Roof peak extends above: 58-48 = 10px offset up
+            b.renderOffsetX = 0;
+            b.renderOffsetY = -10;
             break;
         default:
             b.width = 1;
