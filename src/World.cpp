@@ -113,6 +113,23 @@ bool World::Load(const std::string& filepath) {
 
 void World::SetTile(int x, int y, TileType type) {
     if (x >= 0 && x < cols && y >= 0 && y < rows) {
+        // For multi-tile types (2x2 like Road), remove overlapping tiles
+        // A road at position (px, py) visually covers (px, py) to (px+1, py+1)
+        // So placing at (x, y) conflicts with roads at (x-1, y), (x, y-1), (x-1, y-1)
+        if (type == TileType::Road) {
+            // Check left neighbor - its right side overlaps our left
+            if (x > 0 && tiles[y][x-1].type == TileType::Road) {
+                tiles[y][x-1].type = TileType::Empty;
+            }
+            // Check top neighbor - its bottom overlaps our top
+            if (y > 0 && tiles[y-1][x].type == TileType::Road) {
+                tiles[y-1][x].type = TileType::Empty;
+            }
+            // Check top-left neighbor - its bottom-right overlaps our top-left
+            if (x > 0 && y > 0 && tiles[y-1][x-1].type == TileType::Road) {
+                tiles[y-1][x-1].type = TileType::Empty;
+            }
+        }
         tiles[y][x].type = type;
     }
 }
