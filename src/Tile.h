@@ -7,9 +7,8 @@ const int TILE_SIZE = 16;
 
 enum class TileType {
     Empty,
-    Grass,
+    Path,
     Road,
-    Water,
     Track
 };
 

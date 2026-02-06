@@ -45,9 +45,9 @@ int main() {
     World world(worldRows, worldCols);
     GameCamera camera;
 
-    TileType selectedTile = TileType::Grass;
-    const TileType tileTypes[] = { TileType::Empty, TileType::Grass, TileType::Road, TileType::Water, TileType::Track };
-    const int tileTypeCount = 5;
+    TileType selectedTile = TileType::Path;
+    const TileType tileTypes[] = { TileType::Empty, TileType::Path, TileType::Road, TileType::Track };
+    const int tileTypeCount = 4;
     int selectedIndex = 1;
 
     // Building selection
