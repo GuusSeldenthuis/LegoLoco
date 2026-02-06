@@ -55,3 +55,11 @@ make run
 make clean      # Remove only the game binary
 make clean-all  # Remove binary and rebuild raylib
 ```
+
+## Acknowledgments
+
+Thanks to [shinyquagsire23](https://github.com/shinyquagsire23) for creating [rf-extract.py](https://gist.github.com/neofelis2X/fd244e45eafef0c90a1eafed9041abd3) and [neofelis2X](https://github.com/neofelis2X) for making it compatible with Python 3.
+
+## Disclaimer
+
+This is a fan-made, non-commercial project created for educational and entertainment purposes only. "LEGO" and "LEGO Loco" are trademarks of the LEGO Group, which does not sponsor, authorize, or endorse this project. Any original game assets used are the property of their respective owners. This project is not affiliated with or endorsed by the LEGO Group in any way.
