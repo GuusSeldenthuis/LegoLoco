@@ -31,9 +31,9 @@ Building CreateBuilding(BuildingType type, int gridX, int gridY) {
             b.renderOffsetY = -16;
             break;
         case BuildingType::PizzaShop:
-            b.width = 6;
+            b.width = 3;
             b.height = 3;
-            // Texture is 96x48, footprint is 96x48 (6x3 tiles)
+            // Texture is 48x48, footprint is 48x48 (3x3 tiles)
             b.renderOffsetX = 0;
             b.renderOffsetY = 0;
             break;
