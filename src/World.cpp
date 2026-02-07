@@ -231,3 +231,11 @@ Building* World::GetBuildingAt(int gridX, int gridY) {
     }
     return nullptr;
 }
+
+void World::RebuildPathGraph() {
+    pathGraph.Build(tiles, rows, cols);
+}
+
+void World::RenderPathDebug(GameCamera& camera) {
+    pathGraph.RenderDebug(camera);
+}

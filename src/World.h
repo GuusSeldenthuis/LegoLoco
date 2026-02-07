@@ -3,6 +3,7 @@
 #include "Tile.h"
 #include "Building.h"
 #include "Placeable.h"
+#include "PathGraph.h"
 #include "Camera.h"
 #include <vector>
 #include <string>
@@ -13,6 +14,7 @@ private:
     int cols;
     std::vector<std::vector<Tile>> tiles;
     std::vector<Building> buildings;
+    PathGraph pathGraph;
 
 public:
     World(int rows, int cols);
@@ -32,6 +34,9 @@ public:
     bool Save(const std::string& filepath) const;
     bool Load(const std::string& filepath);
     void Clear();
+
+    void RebuildPathGraph();
+    void RenderPathDebug(GameCamera& camera);
 
     int GetRows() const { return rows; }
     int GetCols() const { return cols; }

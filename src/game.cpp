@@ -54,6 +54,9 @@ int main() {
     BuildingType selectedBuilding = BuildingType::None;
     bool buildingMode = false;
 
+    // Debug
+    bool showDebug = false;
+
     // Status message
     std::string statusMessage = "";
     float statusTimer = 0.0f;
@@ -82,6 +85,7 @@ int main() {
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L)) {
             if (world.Load(SAVE_PATH)) {
                 statusMessage = "World loaded!";
+                world.RebuildPathGraph();
             } else {
                 statusMessage = "Failed to load!";
             }
@@ -99,6 +103,9 @@ int main() {
         if (IsKeyPressed(KEY_SIX))   { selectedBuilding = BuildingType::House; buildingMode = true; }
         if (IsKeyPressed(KEY_SEVEN)) { selectedBuilding = BuildingType::PizzaShop; buildingMode = true; }
 
+        // Debug toggle
+        if (IsKeyPressed(KEY_F1)) showDebug = !showDebug;
+
         // Get hovered tile
         Vector2 mousePos = GetMousePosition();
         Vector2 worldPos = ScreenToWorld(mousePos, camera.offset, camera.zoom);
@@ -106,18 +113,22 @@ int main() {
         int hoverY = (int)floorf(worldPos.y);
         bool validHover = hoverX >= 0 && hoverX < world.GetCols() && hoverY >= 0 && hoverY < world.GetRows();
 
+        bool tilesChanged = false;
+
         // Place tile or building with left click
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && validHover) {
             if (buildingMode) {
                 world.PlaceBuilding(selectedBuilding, hoverX, hoverY);
             } else {
                 world.SetTile(hoverX, hoverY, selectedTile);
+                tilesChanged = true;
             }
         }
 
         // Continuous tile placement (drag) - only for tiles, not buildings
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && validHover && !buildingMode) {
             world.SetTile(hoverX, hoverY, selectedTile);
+            tilesChanged = true;
         }
 
         // Remove tile or building with right click
@@ -126,13 +137,17 @@ int main() {
                 world.RemoveBuilding(hoverX, hoverY);
             } else {
                 world.SetTile(hoverX, hoverY, TileType::Empty);
+                tilesChanged = true;
             }
         }
 
         // Continuous removal (drag) - only for tiles
         if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && validHover && !buildingMode) {
             world.SetTile(hoverX, hoverY, TileType::Empty);
+            tilesChanged = true;
         }
+
+        if (tilesChanged) world.RebuildPathGraph();
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
@@ -145,6 +160,8 @@ int main() {
 
         world.Render(camera, tileTextures);
         world.RenderBuildings(camera, buildingTextures);
+
+        if (showDebug) world.RenderPathDebug(camera);
 
         // Draw hover highlight
         if (validHover) {
@@ -215,7 +232,7 @@ int main() {
         // Debug info
         DrawRectangle(5, screenHeight - 55, screenWidth - 10, 50, Color{0, 0, 0, 150});
         DrawText(TextFormat("Grid: %d, %d", hoverX, hoverY), 10, screenHeight - 50, 16, WHITE);
-        DrawText("LMB: Place | RMB: Remove | MMB: Pan | Scroll: Zoom | Ctrl+S: Save | Ctrl+L: Load", 10, screenHeight - 25, 14, LIGHTGRAY);
+        DrawText("LMB: Place | RMB: Remove | MMB: Pan | Scroll: Zoom | Ctrl+S: Save | Ctrl+L: Load | F1: Debug", 10, screenHeight - 25, 14, LIGHTGRAY);
 
         // Status message
         if (!statusMessage.empty()) {
