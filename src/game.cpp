@@ -46,11 +46,11 @@ int main() {
     GameCamera camera;
 
     TileType selectedTile = TileType::Path;
-    const TileType tileTypes[] = { TileType::Empty, TileType::Path, TileType::Road, TileType::Track };
-    const int tileTypeCount = 4;
+    const TileType tileTypes[] = { TileType::Empty, TileType::Path, TileType::Track };
+    const int tileTypeCount = 3;
     int selectedIndex = 1;
 
-    // Building selection
+    // Building/placeable selection
     BuildingType selectedBuilding = BuildingType::None;
     bool buildingMode = false;
 
@@ -92,11 +92,12 @@ int main() {
         if (IsKeyPressed(KEY_ONE))   { selectedIndex = 0; selectedTile = tileTypes[0]; buildingMode = false; }
         if (IsKeyPressed(KEY_TWO))   { selectedIndex = 1; selectedTile = tileTypes[1]; buildingMode = false; }
         if (IsKeyPressed(KEY_THREE)) { selectedIndex = 2; selectedTile = tileTypes[2]; buildingMode = false; }
-        if (IsKeyPressed(KEY_FOUR))  { selectedIndex = 3; selectedTile = tileTypes[3]; buildingMode = false; }
-        if (IsKeyPressed(KEY_FIVE))  { selectedIndex = 4; selectedTile = tileTypes[4]; buildingMode = false; }
 
-        // Building selection
-        if (IsKeyPressed(KEY_SIX)) { selectedBuilding = BuildingType::RedHouse; buildingMode = true; }
+        // Placeable selection
+        if (IsKeyPressed(KEY_FOUR))  { selectedBuilding = BuildingType::Road; buildingMode = true; }
+        if (IsKeyPressed(KEY_FIVE))  { selectedBuilding = BuildingType::RedHouse; buildingMode = true; }
+        if (IsKeyPressed(KEY_SIX))   { selectedBuilding = BuildingType::House; buildingMode = true; }
+        if (IsKeyPressed(KEY_SEVEN)) { selectedBuilding = BuildingType::PizzaShop; buildingMode = true; }
 
         // Get hovered tile
         Vector2 mousePos = GetMousePosition();
@@ -157,21 +158,44 @@ int main() {
                 float previewH = preview.height * tileSize;
 
                 // Check if placement is valid
-                bool canPlace = world.CanPlaceBuilding(preview);
-                Color highlightColor = canPlace ? Color{100, 255, 100, 100} : Color{255, 100, 100, 100};
+                bool canPlace = world.CanPlace(preview);
+                Color tint = canPlace ? Color{100, 255, 100, 150} : Color{255, 100, 100, 150};
                 Color outlineColor = canPlace ? GREEN : RED;
 
-                DrawRectangle((int)pos.x, (int)pos.y, (int)previewW, (int)previewH, highlightColor);
+                // Show texture preview with tint
+                if (buildingTextures.HasTexture(selectedBuilding)) {
+                    Texture2D tex = buildingTextures.Get(selectedBuilding);
+                    Rectangle source = { 0, 0, (float)tex.width, (float)tex.height };
+                    // Apply render offset to preview position
+                    float previewX = pos.x + preview.renderOffsetX * camera.zoom;
+                    float previewY = pos.y + preview.renderOffsetY * camera.zoom;
+                    Rectangle dest = { previewX, previewY, tex.width * camera.zoom, tex.height * camera.zoom };
+                    DrawTexturePro(tex, source, dest, {0, 0}, 0.0f, tint);
+                }
+
+                // Footprint outline
                 DrawRectangleLines((int)pos.x, (int)pos.y, (int)previewW, (int)previewH, outlineColor);
+            } else if (selectedTile != TileType::Empty) {
+                // Show tile texture preview with green tint
+                if (tileTextures.HasTexture(selectedTile)) {
+                    Texture2D tex = tileTextures.Get(selectedTile);
+                    Rectangle source = { 0, 0, (float)tex.width, (float)tex.height };
+                    Rectangle dest = { pos.x, pos.y, tileSize, tileSize };
+                    DrawTexturePro(tex, source, dest, {0, 0}, 0.0f, Color{100, 255, 100, 150});
+                } else {
+                    DrawRectangle((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, Color{100, 255, 100, 100});
+                }
+                DrawRectangleLines((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, GREEN);
             } else {
-                DrawRectangle((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, Color{255, 255, 255, 100});
-                DrawRectangleLines((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, WHITE);
+                // Empty/eraser - show red preview
+                DrawRectangle((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, Color{255, 100, 100, 100});
+                DrawRectangleLines((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, RED);
             }
         }
 
         // UI - Tile/Building palette
-        DrawRectangle(10, 10, 160, 165, Color{0, 0, 0, 150});
-        DrawText("Tiles (1-5):", 20, 20, 16, WHITE);
+        DrawRectangle(10, 10, 160, 240, Color{0, 0, 0, 150});
+        DrawText("Tiles (1-3):", 20, 20, 16, WHITE);
         for (int i = 0; i < tileTypeCount; i++) {
             int y = 45 + i * 18;
             Color textColor = (!buildingMode && i == selectedIndex) ? YELLOW : WHITE;
@@ -179,10 +203,14 @@ int main() {
             DrawText(TextFormat("%s%d: %s", marker, i + 1, GetTileName(tileTypes[i])), 20, y, 14, textColor);
         }
 
-        DrawText("Buildings (6):", 20, 140, 16, WHITE);
-        Color houseColor = buildingMode ? YELLOW : WHITE;
-        const char* houseMarker = buildingMode ? "> " : "  ";
-        DrawText(TextFormat("%s6: %s", houseMarker, GetBuildingName(BuildingType::RedHouse)), 20, 160, 14, houseColor);
+        const BuildingType buildingTypes[] = { BuildingType::Road, BuildingType::RedHouse, BuildingType::House, BuildingType::PizzaShop };
+        DrawText("Placeables (4-7):", 20, 110, 16, WHITE);
+        for (int i = 0; i < 4; i++) {
+            int y = 135 + i * 18;
+            Color textColor = (buildingMode && selectedBuilding == buildingTypes[i]) ? YELLOW : WHITE;
+            const char* marker = (buildingMode && selectedBuilding == buildingTypes[i]) ? "> " : "  ";
+            DrawText(TextFormat("%s%d: %s", marker, i + 4, GetBuildingName(buildingTypes[i])), 20, y, 14, textColor);
+        }
 
         // Debug info
         DrawRectangle(5, screenHeight - 55, screenWidth - 10, 50, Color{0, 0, 0, 150});

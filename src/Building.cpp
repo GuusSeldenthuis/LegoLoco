@@ -7,6 +7,12 @@ Building CreateBuilding(BuildingType type, int gridX, int gridY) {
     b.gridY = gridY;
 
     switch (type) {
+        case BuildingType::Road:
+            b.width = 2;
+            b.height = 2;
+            b.renderOffsetX = 0;
+            b.renderOffsetY = 0;
+            break;
         case BuildingType::RedHouse:
             b.width = 3;
             b.height = 3;
@@ -15,6 +21,21 @@ Building CreateBuilding(BuildingType type, int gridX, int gridY) {
             // Roof peak extends above: 58-48 = 10px offset up
             b.renderOffsetX = 0;
             b.renderOffsetY = -10;
+            break;
+        case BuildingType::House:
+            b.width = 3;
+            b.height = 3;
+            // Texture is 48x64, footprint is 48x48 (3x3 tiles)
+            // Roof extends above: 64-48 = 16px offset up
+            b.renderOffsetX = 0;
+            b.renderOffsetY = -16;
+            break;
+        case BuildingType::PizzaShop:
+            b.width = 6;
+            b.height = 3;
+            // Texture is 96x48, footprint is 96x48 (6x3 tiles)
+            b.renderOffsetX = 0;
+            b.renderOffsetY = 0;
             break;
         default:
             b.width = 1;
@@ -29,14 +50,20 @@ Building CreateBuilding(BuildingType type, int gridX, int gridY) {
 
 const char* GetBuildingName(BuildingType type) {
     switch (type) {
-        case BuildingType::None:     return "None";
-        case BuildingType::RedHouse: return "Red House";
-        default:                     return "Unknown";
+        case BuildingType::None:      return "None";
+        case BuildingType::Road:      return "Road";
+        case BuildingType::RedHouse:  return "Red House";
+        case BuildingType::House:     return "House";
+        case BuildingType::PizzaShop: return "Pizza Shop";
+        default:                      return "Unknown";
     }
 }
 
 void BuildingTextures::Load() {
+    textures[BuildingType::Road] = LoadTexture("resources/roadHorizontal.png");
     textures[BuildingType::RedHouse] = LoadTexture("resources/redHouse.png");
+    textures[BuildingType::House] = LoadTexture("resources/house.png");
+    textures[BuildingType::PizzaShop] = LoadTexture("resources/pizzaShop.png");
     loaded = true;
 }
 

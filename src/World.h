@@ -2,6 +2,7 @@
 
 #include "Tile.h"
 #include "Building.h"
+#include "Placeable.h"
 #include "Camera.h"
 #include <vector>
 #include <string>
@@ -21,8 +22,8 @@ public:
     void Render(GameCamera& camera, TileTextures& textures);
     void RenderBuildings(GameCamera& camera, BuildingTextures& textures);
 
-    // Building management
-    bool CanPlaceBuilding(const Building& building) const;
+    // Placeable management
+    bool CanPlace(const Placeable& placeable) const;
     bool PlaceBuilding(BuildingType type, int gridX, int gridY);
     bool RemoveBuilding(int gridX, int gridY);
     Building* GetBuildingAt(int gridX, int gridY);

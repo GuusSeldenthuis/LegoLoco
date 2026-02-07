@@ -4,7 +4,6 @@ const char* GetTileName(TileType type) {
     switch (type) {
         case TileType::Empty: return "Empty";
         case TileType::Path:  return "Path";
-        case TileType::Road:  return "Road";
         case TileType::Track: return "Track";
         default:              return "Unknown";
     }
@@ -13,7 +12,6 @@ const char* GetTileName(TileType type) {
 Color GetTileColor(TileType type) {
     switch (type) {
         case TileType::Path:  return LIME;
-        case TileType::Road:  return DARKGRAY;
         case TileType::Track: return BROWN;
         default:              return BLANK;
     }
@@ -21,7 +19,6 @@ Color GetTileColor(TileType type) {
 
 void TileTextures::Load() {
     textures[TileType::Path] = LoadTexture("resources/sidewalk.png");
-    textures[TileType::Road] = LoadTexture("resources/roadHorizontal.png");
     textures[TileType::Track] = LoadTexture("resources/railHorizontal.png");
     loaded = true;
 }

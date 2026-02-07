@@ -1,26 +1,19 @@
 #pragma once
 
 #include "raylib.h"
+#include "Placeable.h"
 #include <unordered_map>
 
 enum class BuildingType {
     None,
-    RedHouse
+    Road,
+    RedHouse,
+    House,
+    PizzaShop
 };
 
-struct Building {
+struct Building : Placeable {
     BuildingType type = BuildingType::None;
-    int gridX = 0;
-    int gridY = 0;
-
-    // Footprint size in tiles
-    int width = 2;
-    int height = 2;
-
-    // Render offset to handle roof/overhang (in pixels, before zoom)
-    // Negative values shift the sprite up/left
-    int renderOffsetX = 0;
-    int renderOffsetY = 0;
 };
 
 Building CreateBuilding(BuildingType type, int gridX, int gridY);

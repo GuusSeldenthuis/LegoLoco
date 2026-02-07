@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <algorithm>
 
 World::World(int rows, int cols) : rows(rows), cols(cols) {
     tiles.resize(rows, std::vector<Tile>(cols));
@@ -113,23 +114,6 @@ bool World::Load(const std::string& filepath) {
 
 void World::SetTile(int x, int y, TileType type) {
     if (x >= 0 && x < cols && y >= 0 && y < rows) {
-        // For multi-tile types (2x2 like Road), remove overlapping tiles
-        // A road at (px, py) covers (px, py) to (px+1, py+1)
-        // Any road within a 3x3 area centered on (x,y) would overlap
-        if (type == TileType::Road) {
-            for (int dy = -1; dy <= 1; dy++) {
-                for (int dx = -1; dx <= 1; dx++) {
-                    if (dx == 0 && dy == 0) continue;
-                    int nx = x + dx;
-                    int ny = y + dy;
-                    if (nx >= 0 && nx < cols && ny >= 0 && ny < rows) {
-                        if (tiles[ny][nx].type == TileType::Road) {
-                            tiles[ny][nx].type = TileType::Empty;
-                        }
-                    }
-                }
-            }
-        }
         tiles[y][x].type = type;
     }
 }
@@ -148,13 +132,13 @@ void World::Render(GameCamera& camera, TileTextures& textures) {
             TileType type = tiles[y][x].type;
 
             if (type != TileType::Empty) {
+                float tileSize = TILE_SIZE * camera.zoom;
                 if (textures.HasTexture(type)) {
                     Texture2D tex = textures.Get(type);
                     Rectangle source = { 0, 0, (float)tex.width, (float)tex.height };
-                    Rectangle dest = { pos.x, pos.y, tex.width * camera.zoom, tex.height * camera.zoom };
+                    Rectangle dest = { pos.x, pos.y, tileSize, tileSize };
                     DrawTexturePro(tex, source, dest, {0, 0}, 0.0f, WHITE);
                 } else {
-                    float tileSize = TILE_SIZE * camera.zoom;
                     Color color = GetTileColor(type);
                     DrawRectangle((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, color);
                 }
@@ -164,8 +148,15 @@ void World::Render(GameCamera& camera, TileTextures& textures) {
 }
 
 void World::RenderBuildings(GameCamera& camera, BuildingTextures& textures) {
-    // Render buildings sorted by Y position for proper depth
-    for (const Building& b : buildings) {
+    // Sort indices by Y position so buildings further back render first
+    std::vector<int> order(buildings.size());
+    for (int i = 0; i < (int)buildings.size(); i++) order[i] = i;
+    std::sort(order.begin(), order.end(), [&](int a, int b) {
+        return buildings[a].gridY < buildings[b].gridY;
+    });
+
+    for (int idx : order) {
+        const Building& b = buildings[idx];
         if (b.type == BuildingType::None) continue;
 
         Vector2 pos = WorldToScreen(b.gridX, b.gridY, camera.offset, camera.zoom);
@@ -183,11 +174,11 @@ void World::RenderBuildings(GameCamera& camera, BuildingTextures& textures) {
     }
 }
 
-bool World::CanPlaceBuilding(const Building& building) const {
+bool World::CanPlace(const Placeable& placeable) const {
     // Check bounds
-    if (building.gridX < 0 || building.gridY < 0 ||
-        building.gridX + building.width > cols ||
-        building.gridY + building.height > rows) {
+    if (placeable.gridX < 0 || placeable.gridY < 0 ||
+        placeable.gridX + placeable.width > cols ||
+        placeable.gridY + placeable.height > rows) {
         return false;
     }
 
@@ -195,11 +186,10 @@ bool World::CanPlaceBuilding(const Building& building) const {
     for (const Building& existing : buildings) {
         if (existing.type == BuildingType::None) continue;
 
-        // Check if footprints overlap
-        bool overlapX = building.gridX < existing.gridX + existing.width &&
-                        building.gridX + building.width > existing.gridX;
-        bool overlapY = building.gridY < existing.gridY + existing.height &&
-                        building.gridY + building.height > existing.gridY;
+        bool overlapX = placeable.gridX < existing.gridX + existing.width &&
+                        placeable.gridX + placeable.width > existing.gridX;
+        bool overlapY = placeable.gridY < existing.gridY + existing.height &&
+                        placeable.gridY + placeable.height > existing.gridY;
 
         if (overlapX && overlapY) {
             return false;
@@ -212,7 +202,7 @@ bool World::CanPlaceBuilding(const Building& building) const {
 bool World::PlaceBuilding(BuildingType type, int gridX, int gridY) {
     Building b = CreateBuilding(type, gridX, gridY);
 
-    if (!CanPlaceBuilding(b)) {
+    if (!CanPlace(b)) {
         return false;
     }
 
