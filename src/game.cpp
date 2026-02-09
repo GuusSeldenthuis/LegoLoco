@@ -46,8 +46,8 @@ int main() {
     GameCamera camera;
 
     TileType selectedTile = TileType::Path;
-    const TileType tileTypes[] = { TileType::Empty, TileType::Path, TileType::Track };
-    const int tileTypeCount = 3;
+    const TileType tileTypes[] = { TileType::Empty, TileType::Path, TileType::Road, TileType::Track };
+    const int tileTypeCount = 4;
     int selectedIndex = 1;
 
     // Building/placeable selection
@@ -96,9 +96,9 @@ int main() {
         if (IsKeyPressed(KEY_ONE))   { selectedIndex = 0; selectedTile = tileTypes[0]; buildingMode = false; }
         if (IsKeyPressed(KEY_TWO))   { selectedIndex = 1; selectedTile = tileTypes[1]; buildingMode = false; }
         if (IsKeyPressed(KEY_THREE)) { selectedIndex = 2; selectedTile = tileTypes[2]; buildingMode = false; }
+        if (IsKeyPressed(KEY_FOUR))  { selectedIndex = 3; selectedTile = tileTypes[3]; buildingMode = false; }
 
         // Placeable selection
-        if (IsKeyPressed(KEY_FOUR))  { selectedBuilding = BuildingType::Road; buildingMode = true; }
         if (IsKeyPressed(KEY_FIVE))  { selectedBuilding = BuildingType::RedHouse; buildingMode = true; }
         if (IsKeyPressed(KEY_SIX))   { selectedBuilding = BuildingType::House; buildingMode = true; }
         if (IsKeyPressed(KEY_SEVEN)) { selectedBuilding = BuildingType::PizzaShop; buildingMode = true; }
@@ -125,8 +125,9 @@ int main() {
             }
         }
 
-        // Continuous tile placement (drag) - only for tiles, not buildings
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && validHover && !buildingMode) {
+        // Continuous tile placement (drag) - only for 1x1 tiles, not buildings or multi-tiles
+        bool is1x1Tile = (GetTileWidth(selectedTile) == 1 && GetTileHeight(selectedTile) == 1);
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && validHover && !buildingMode && is1x1Tile) {
             world.SetTile(hoverX, hoverY, selectedTile);
             tilesChanged = true;
         }
@@ -193,16 +194,28 @@ int main() {
                 // Footprint outline
                 DrawRectangleLines((int)pos.x, (int)pos.y, (int)previewW, (int)previewH, outlineColor);
             } else if (selectedTile != TileType::Empty) {
-                // Show tile texture preview with green tint
-                if (tileTextures.HasTexture(selectedTile)) {
-                    Texture2D tex = tileTextures.Get(selectedTile);
+                // Get tile dimensions (handles multi-tile like 2x2 roads)
+                int tileW = GetTileWidth(selectedTile);
+                int tileH = GetTileHeight(selectedTile);
+                float previewW = tileSize * tileW;
+                float previewH = tileSize * tileH;
+
+                // Check if placement is valid (within bounds)
+                bool canPlace = (hoverX + tileW <= world.GetCols() && hoverY + tileH <= world.GetRows());
+                Color tint = canPlace ? Color{100, 255, 100, 150} : Color{255, 100, 100, 150};
+                Color outlineColor = canPlace ? GREEN : RED;
+
+                // Show tile texture preview with tint (use straight shape for preview)
+                TileShape previewShape = (selectedTile == TileType::Path) ? TileShape::Single : TileShape::Straight;
+                if (tileTextures.HasTexture(selectedTile, previewShape)) {
+                    Texture2D tex = tileTextures.Get(selectedTile, previewShape);
                     Rectangle source = { 0, 0, (float)tex.width, (float)tex.height };
-                    Rectangle dest = { pos.x, pos.y, tileSize, tileSize };
-                    DrawTexturePro(tex, source, dest, {0, 0}, 0.0f, Color{100, 255, 100, 150});
+                    Rectangle dest = { pos.x, pos.y, previewW, previewH };
+                    DrawTexturePro(tex, source, dest, {0, 0}, 0.0f, tint);
                 } else {
-                    DrawRectangle((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, Color{100, 255, 100, 100});
+                    DrawRectangle((int)pos.x, (int)pos.y, (int)previewW, (int)previewH, tint);
                 }
-                DrawRectangleLines((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, GREEN);
+                DrawRectangleLines((int)pos.x, (int)pos.y, (int)previewW, (int)previewH, outlineColor);
             } else {
                 // Empty/eraser - show red preview
                 DrawRectangle((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, Color{255, 100, 100, 100});
@@ -211,8 +224,8 @@ int main() {
         }
 
         // UI - Tile/Building palette
-        DrawRectangle(10, 10, 160, 240, Color{0, 0, 0, 150});
-        DrawText("Tiles (1-3):", 20, 20, 16, WHITE);
+        DrawRectangle(10, 10, 160, 220, Color{0, 0, 0, 150});
+        DrawText("Tiles (1-4):", 20, 20, 16, WHITE);
         for (int i = 0; i < tileTypeCount; i++) {
             int y = 45 + i * 18;
             Color textColor = (!buildingMode && i == selectedIndex) ? YELLOW : WHITE;
@@ -220,13 +233,13 @@ int main() {
             DrawText(TextFormat("%s%d: %s", marker, i + 1, GetTileName(tileTypes[i])), 20, y, 14, textColor);
         }
 
-        const BuildingType buildingTypes[] = { BuildingType::Road, BuildingType::RedHouse, BuildingType::House, BuildingType::PizzaShop };
-        DrawText("Placeables (4-7):", 20, 110, 16, WHITE);
-        for (int i = 0; i < 4; i++) {
-            int y = 135 + i * 18;
+        const BuildingType buildingTypes[] = { BuildingType::RedHouse, BuildingType::House, BuildingType::PizzaShop };
+        DrawText("Placeables (5-7):", 20, 125, 16, WHITE);
+        for (int i = 0; i < 3; i++) {
+            int y = 150 + i * 18;
             Color textColor = (buildingMode && selectedBuilding == buildingTypes[i]) ? YELLOW : WHITE;
             const char* marker = (buildingMode && selectedBuilding == buildingTypes[i]) ? "> " : "  ";
-            DrawText(TextFormat("%s%d: %s", marker, i + 4, GetBuildingName(buildingTypes[i])), 20, y, 14, textColor);
+            DrawText(TextFormat("%s%d: %s", marker, i + 5, GetBuildingName(buildingTypes[i])), 20, y, 14, textColor);
         }
 
         // Debug info

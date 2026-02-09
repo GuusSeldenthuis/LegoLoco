@@ -7,12 +7,6 @@ Building CreateBuilding(BuildingType type, int gridX, int gridY) {
     b.gridY = gridY;
 
     switch (type) {
-        case BuildingType::Road:
-            b.width = 2;
-            b.height = 2;
-            b.renderOffsetX = 0;
-            b.renderOffsetY = 0;
-            break;
         case BuildingType::RedHouse:
             b.width = 3;
             b.height = 3;
@@ -51,7 +45,6 @@ Building CreateBuilding(BuildingType type, int gridX, int gridY) {
 const char* GetBuildingName(BuildingType type) {
     switch (type) {
         case BuildingType::None:      return "None";
-        case BuildingType::Road:      return "Road";
         case BuildingType::RedHouse:  return "Red House";
         case BuildingType::House:     return "House";
         case BuildingType::PizzaShop: return "Pizza Shop";
@@ -60,7 +53,6 @@ const char* GetBuildingName(BuildingType type) {
 }
 
 void BuildingTextures::Load() {
-    textures[BuildingType::Road] = LoadTexture("resources/roadHorizontal.png");
     textures[BuildingType::RedHouse] = LoadTexture("resources/redHouse.png");
     textures[BuildingType::House] = LoadTexture("resources/house.png");
     textures[BuildingType::PizzaShop] = LoadTexture("resources/pizzaShop.png");

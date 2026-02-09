@@ -11,11 +11,13 @@ Recreating LEGO Loco (1998) in C++ with raylib.
 - [x] Camera zoom in/out
 
 ### 1.2 Tile System
-- [x] Define tile data structure (type)
-- [ ] Add tile orientation and connection metadata
+- [x] Define tile data structure (type, connections)
+- [x] Add tile orientation and connection metadata
 - [x] Load and render placeholder tile sprites
 - [x] Implement tile placement on grid
 - [x] Tile removal/replacement
+- [x] Road tile auto-connection logic
+- [x] Train track tile auto-connection logic
 
 ### 1.3 World Management
 - [x] World data structure (2D array of tiles)

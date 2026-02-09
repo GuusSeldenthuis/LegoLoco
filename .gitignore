@@ -3,3 +3,4 @@ CLAUDE.md
 bin/
 *.o
 saves/*.json
+resources/raw

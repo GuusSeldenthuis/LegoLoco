@@ -112,9 +112,159 @@ bool World::Load(const std::string& filepath) {
     return true;
 }
 
+// Helper to get anchor position for a tile (returns itself if anchor or empty)
+Vector2 World::GetAnchorPos(int x, int y) const {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return {(float)x, (float)y};
+    const Tile& t = tiles[y][x];
+    if (t.isAnchor) return {(float)x, (float)y};
+    return {(float)(x + t.anchorOffsetX), (float)(y + t.anchorOffsetY)};
+}
+
+// Clear a multi-tile starting from any cell
+void World::ClearMultiTile(int x, int y) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return;
+    if (tiles[y][x].type == TileType::Empty) return;
+
+    // Find anchor
+    Vector2 anchor = GetAnchorPos(x, y);
+    int ax = (int)anchor.x;
+    int ay = (int)anchor.y;
+
+    if (ax < 0 || ax >= cols || ay < 0 || ay >= rows) return;
+
+    TileType type = tiles[ay][ax].type;
+    int w = GetTileWidth(type);
+    int h = GetTileHeight(type);
+
+    // Clear all cells of this multi-tile
+    for (int dy = 0; dy < h; dy++) {
+        for (int dx = 0; dx < w; dx++) {
+            int cx = ax + dx;
+            int cy = ay + dy;
+            if (cx >= 0 && cx < cols && cy >= 0 && cy < rows) {
+                tiles[cy][cx] = Tile{};
+            }
+        }
+    }
+}
+
 void World::SetTile(int x, int y, TileType type) {
-    if (x >= 0 && x < cols && y >= 0 && y < rows) {
-        tiles[y][x].type = type;
+    int w = GetTileWidth(type);
+    int h = GetTileHeight(type);
+
+    // Check bounds for multi-tile
+    if (x < 0 || y < 0 || x + w > cols || y + h > rows) return;
+
+    // For empty type, clear the tile at this position (handling multi-tiles)
+    if (type == TileType::Empty) {
+        ClearMultiTile(x, y);
+        UpdateAllConnections();
+        return;
+    }
+
+    // Clear any existing tiles in the footprint
+    for (int dy = 0; dy < h; dy++) {
+        for (int dx = 0; dx < w; dx++) {
+            ClearMultiTile(x + dx, y + dy);
+        }
+    }
+
+    // Place the new tile
+    for (int dy = 0; dy < h; dy++) {
+        for (int dx = 0; dx < w; dx++) {
+            Tile& t = tiles[y + dy][x + dx];
+            t.type = type;
+            t.connections = CONN_NONE;
+            t.isAnchor = (dx == 0 && dy == 0);
+            t.anchorOffsetX = -dx;
+            t.anchorOffsetY = -dy;
+        }
+    }
+
+    UpdateAllConnections();
+}
+
+uint8_t World::CalculateConnections(int x, int y) const {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return CONN_NONE;
+
+    const Tile& tile = tiles[y][x];
+    if (tile.type == TileType::Empty || tile.type == TileType::Path) return CONN_NONE;
+    if (!tile.isAnchor) return CONN_NONE;  // Only anchors track connections
+
+    TileType myType = tile.type;
+    int w = GetTileWidth(myType);
+    int h = GetTileHeight(myType);
+
+    uint8_t connections = CONN_NONE;
+
+    // Check UP edge (row y-1, columns x to x+w-1)
+    for (int dx = 0; dx < w; dx++) {
+        int checkY = y - 1;
+        int checkX = x + dx;
+        if (checkY >= 0 && checkX < cols) {
+            TileType neighborType = tiles[checkY][checkX].type;
+            if (CanTilesConnect(myType, neighborType)) {
+                connections |= CONN_UP;
+                break;
+            }
+        }
+    }
+
+    // Check DOWN edge (row y+h, columns x to x+w-1)
+    for (int dx = 0; dx < w; dx++) {
+        int checkY = y + h;
+        int checkX = x + dx;
+        if (checkY < rows && checkX < cols) {
+            TileType neighborType = tiles[checkY][checkX].type;
+            if (CanTilesConnect(myType, neighborType)) {
+                connections |= CONN_DOWN;
+                break;
+            }
+        }
+    }
+
+    // Check LEFT edge (column x-1, rows y to y+h-1)
+    for (int dy = 0; dy < h; dy++) {
+        int checkY = y + dy;
+        int checkX = x - 1;
+        if (checkX >= 0 && checkY < rows) {
+            TileType neighborType = tiles[checkY][checkX].type;
+            if (CanTilesConnect(myType, neighborType)) {
+                connections |= CONN_LEFT;
+                break;
+            }
+        }
+    }
+
+    // Check RIGHT edge (column x+w, rows y to y+h-1)
+    for (int dy = 0; dy < h; dy++) {
+        int checkY = y + dy;
+        int checkX = x + w;
+        if (checkX < cols && checkY < rows) {
+            TileType neighborType = tiles[checkY][checkX].type;
+            if (CanTilesConnect(myType, neighborType)) {
+                connections |= CONN_RIGHT;
+                break;
+            }
+        }
+    }
+
+    return connections;
+}
+
+void World::UpdateTileConnections(int x, int y) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return;
+    if (!tiles[y][x].isAnchor) return;
+    tiles[y][x].connections = CalculateConnections(x, y);
+}
+
+void World::UpdateAllConnections() {
+    for (int y = 0; y < rows; y++) {
+        for (int x = 0; x < cols; x++) {
+            if (tiles[y][x].isAnchor && tiles[y][x].type != TileType::Empty) {
+                tiles[y][x].connections = CalculateConnections(x, y);
+            }
+        }
     }
 }
 
@@ -128,20 +278,33 @@ Tile World::GetTile(int x, int y) const {
 void World::Render(GameCamera& camera, TileTextures& textures) {
     for (int y = 0; y < rows; y++) {
         for (int x = 0; x < cols; x++) {
-            Vector2 pos = WorldToScreen(x, y, camera.offset, camera.zoom);
-            TileType type = tiles[y][x].type;
+            const Tile& tile = tiles[y][x];
 
-            if (type != TileType::Empty) {
-                float tileSize = TILE_SIZE * camera.zoom;
-                if (textures.HasTexture(type)) {
-                    Texture2D tex = textures.Get(type);
-                    Rectangle source = { 0, 0, (float)tex.width, (float)tex.height };
-                    Rectangle dest = { pos.x, pos.y, tileSize, tileSize };
-                    DrawTexturePro(tex, source, dest, {0, 0}, 0.0f, WHITE);
-                } else {
-                    Color color = GetTileColor(type);
-                    DrawRectangle((int)pos.x, (int)pos.y, (int)tileSize, (int)tileSize, color);
-                }
+            // Only render anchor tiles (skip non-anchor parts of multi-tiles)
+            if (tile.type == TileType::Empty || !tile.isAnchor) continue;
+
+            Vector2 pos = WorldToScreen(x, y, camera.offset, camera.zoom);
+            int w = GetTileWidth(tile.type);
+            int h = GetTileHeight(tile.type);
+            float renderW = TILE_SIZE * w * camera.zoom;
+            float renderH = TILE_SIZE * h * camera.zoom;
+
+            // Get shape and rotation based on connections
+            TileShape shape = (tile.type == TileType::Path) ? TileShape::Single : GetTileShape(tile.connections);
+            float rotation = GetTileRotation(tile.connections);
+
+            if (textures.HasTexture(tile.type, shape)) {
+                Texture2D tex = textures.Get(tile.type, shape);
+                Rectangle source = { 0, 0, (float)tex.width, (float)tex.height };
+                // For rotation, we need to position dest at center and use origin
+                float centerX = pos.x + renderW / 2;
+                float centerY = pos.y + renderH / 2;
+                Rectangle dest = { centerX, centerY, renderW, renderH };
+                Vector2 origin = { renderW / 2, renderH / 2 };
+                DrawTexturePro(tex, source, dest, origin, rotation, WHITE);
+            } else {
+                Color color = GetTileColor(tile.type);
+                DrawRectangle((int)pos.x, (int)pos.y, (int)renderW, (int)renderH, color);
             }
         }
     }

@@ -16,6 +16,15 @@ private:
     std::vector<Building> buildings;
     PathGraph pathGraph;
 
+    // Multi-tile helpers
+    Vector2 GetAnchorPos(int x, int y) const;
+    void ClearMultiTile(int x, int y);
+
+    // Update connections for a tile and its neighbors
+    void UpdateTileConnections(int x, int y);
+    void UpdateAllConnections();
+    uint8_t CalculateConnections(int x, int y) const;
+
 public:
     World(int rows, int cols);
 

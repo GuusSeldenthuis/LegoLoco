@@ -6,7 +6,6 @@
 
 enum class BuildingType {
     None,
-    Road,
     RedHouse,
     House,
     PizzaShop
