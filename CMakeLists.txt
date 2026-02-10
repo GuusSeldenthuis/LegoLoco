@@ -11,11 +11,7 @@ set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
 add_subdirectory(raylib)
 
 # Source files
-set(SOURCES
-    src/game.cpp
-    src/Tile.cpp
-    src/World.cpp
-)
+file(GLOB SOURCES src/*.cpp)
 
 # Main executable
 add_executable(${PROJECT_NAME} ${SOURCES})

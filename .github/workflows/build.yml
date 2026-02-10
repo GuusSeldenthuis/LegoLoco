@@ -1,0 +1,63 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev libgl1-mesa-dev libglu1-mesa-dev
+
+      - name: Build
+        run: make -j$(nproc)
+
+      - name: Package
+        run: |
+          mkdir -p openLegoLoco-linux
+          cp bin/lego_loco openLegoLoco-linux/
+          cp -r resources openLegoLoco-linux/
+          cp -r saves openLegoLoco-linux/ 2>/dev/null || mkdir -p openLegoLoco-linux/saves
+          tar czf openLegoLoco-linux.tar.gz openLegoLoco-linux
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openLegoLoco-linux
+          path: openLegoLoco-linux.tar.gz
+
+  release:
+    needs: build-linux
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: openLegoLoco-linux
+
+      - name: Update latest release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: latest
+          name: Latest Build
+          body: |
+            Automated build from the latest commit on master.
+
+            **Linux:** Download `openLegoLoco-linux.tar.gz`, extract, and run `./lego_loco`.
+          artifacts: openLegoLoco-linux.tar.gz
+          allowUpdates: true
+          makeLatest: true
+          prerelease: true

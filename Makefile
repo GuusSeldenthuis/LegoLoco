@@ -8,7 +8,7 @@ INCLUDE = -I$(RAYLIB_DIR) -I$(SRC_DIR)
 LDFLAGS = -L$(RAYLIB_DIR) -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
 TARGET = bin/lego_loco
-SRCS = $(SRC_DIR)/game.cpp $(SRC_DIR)/Tile.cpp $(SRC_DIR)/Building.cpp $(SRC_DIR)/World.cpp $(SRC_DIR)/PathGraph.cpp
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(SRCS:.cpp=.o)
 
 all: $(TARGET)
