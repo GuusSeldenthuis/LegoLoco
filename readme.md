@@ -1,5 +1,7 @@
 # openLegoLoco
 
+[![Build & Release](https://github.com/GuusSeldenthuis/LegoLoco/actions/workflows/build.yml/badge.svg)](https://github.com/GuusSeldenthuis/LegoLoco/actions/workflows/build.yml)
+
 ![Screenshot](images/Screenshot_02.png)
 
 A game project using raylib.

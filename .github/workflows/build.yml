@@ -36,17 +36,52 @@ jobs:
           name: openLegoLoco-linux
           path: openLegoLoco-linux.tar.gz
 
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build with CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p openLegoLoco-windows
+          cp bin/lego_loco.exe openLegoLoco-windows/
+          cp -r resources openLegoLoco-windows/
+          mkdir -p openLegoLoco-windows/saves
+
+      - name: Create zip
+        shell: pwsh
+        run: Compress-Archive -Path openLegoLoco-windows -DestinationPath openLegoLoco-windows.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openLegoLoco-windows
+          path: openLegoLoco-windows.zip
+
   release:
-    needs: build-linux
+    needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     permissions:
       contents: write
     steps:
-      - name: Download artifact
+      - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
           name: openLegoLoco-linux
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: openLegoLoco-windows
 
       - name: Update latest release
         uses: ncipollo/release-action@v1
@@ -56,8 +91,9 @@ jobs:
           body: |
             Automated build from the latest commit on master.
 
-            **Linux:** Download `openLegoLoco-linux.tar.gz`, extract, and run `./lego_loco`.
-          artifacts: openLegoLoco-linux.tar.gz
+            **Linux:** Download `openLegoLoco-linux.tar.gz`, extract, and run `./lego_loco`
+            **Windows:** Download `openLegoLoco-windows.zip`, extract, and run `lego_loco.exe`
+          artifacts: "openLegoLoco-linux.tar.gz,openLegoLoco-windows.zip"
           allowUpdates: true
           makeLatest: true
           prerelease: true
