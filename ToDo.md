@@ -17,7 +17,7 @@ Recreating LEGO Loco (1998) in C++ with raylib.
 - [x] Implement tile placement on grid
 - [x] Tile removal/replacement
 - [x] Road tile auto-connection logic
-- [x] Train track tile auto-connection logic
+- [x] Train track manual placement with rotation
 
 ### 1.3 World Management
 - [x] World data structure (2D array of tiles)
@@ -26,62 +26,81 @@ Recreating LEGO Loco (1998) in C++ with raylib.
 
 ---
 
-## Milestone 2: Buildings & Objects
+## Milestone 2: User Interface
 
-### 2.1 Building Placement
+### 2.1 Game States
+- [ ] Main menu screen (New Game, Load Game, Quit)
+- [ ] Transition from main menu to gameplay
+- [ ] In-game state management (building vs playing)
+
+### 2.2 Toy Box (Build Menu) - 3x5 button grid + close bar
+The Toy Box is a floating panel with a 3-wide x 5-high button grid:
+
+**Row 1 - Placement**
+- [ ] Tiles button (opens sub-menu: tracks, road pieces)
+- [ ] Buildings button (opens sub-menu: houses, stations, shops)
+- [ ] Nature button (opens sub-menu: trees, vegetation, props)
+
+**Row 2 - Removal**
+- [ ] Eraser (remove single object on click)
+- [ ] Bomb (destroy all - clear entire world)
+- [ ] Undo (revert last action)
+
+**Row 3 - File**
+- [ ] Load/Save button (save and load world files)
+- [ ] Background selector (change world background)
+- [ ] Bulldozer mode toggle (auto-remove when placing on top)
+
+**Row 4 - Settings**
+- [ ] Windowed/Fullscreen toggle
+- [ ] Help screen
+- [ ] Audio on/off toggle
+
+**Row 5 - Close**
+- [ ] Close Toy Box button (single wide button spanning full width)
+
+### 2.3 Interaction Feedback
+- [x] Hover highlights on tiles
+- [x] Placement ghost preview
+- [ ] Selection indicators
+- [ ] Error messages for invalid actions
+
+---
+
+## Milestone 3: Buildings & Objects
+
+### 3.1 Building Placement
 - [x] Building data structure (size, type, properties)
 - [x] Multi-tile building footprints
 - [x] Placement validation (no overlap)
 - [x] Building removal
 
-### 2.2 Core Buildings
+### 3.2 Core Buildings
 - [ ] Houses (minifigure spawn points)
 - [ ] Train station (passenger boarding)
 - [ ] Train depot (train spawn/storage)
 - [ ] Decorative buildings
 
-### 2.3 Scenery
+### 3.3 Scenery
 - [ ] Trees and vegetation
-- [ ] Roads (visual only for v1)
 - [ ] Fences and props
 
 ---
 
-## Milestone 3: Track System
+## Milestone 4: Track System
 
-### 3.1 Track Tiles
-- [ ] Straight track (horizontal/vertical in isometric)
-- [ ] Curved track (4 orientations)
+### 4.1 Track Tiles
+- [x] Straight track with manual rotation
+- [x] Curved track (3x3) with manual rotation
+- [ ] Track switches/junctions
 - [ ] Track validation (connections must align)
-- [ ] Visual feedback for invalid placement
 
-### 3.2 Track Pathfinding
-- [ ] Build track graph from placed tiles
+### 4.2 Track Pathfinding
+- [x] PathGraph for path tiles
+- [ ] Extend PathGraph to track tiles
 - [ ] Calculate path along connected tracks
 - [ ] Handle junctions and switches
 - [ ] Detect loops and dead ends
-
----
-
-## Milestone 4: Minifigures
-
-### 4.1 Basic Minifigure
-- [ ] Minifigure sprite with animations (idle, walk)
-- [ ] Spawn from houses
-- [ ] Random wandering AI
-- [ ] Pathfinding on walkable areas
-
-### 4.2 Minifigure Interaction
-- [ ] Pick up minifigure with mouse
-- [ ] Drop minifigure at new location
-- [ ] Minifigure walks to nearest station
-- [ ] Board train at station
-
-### 4.3 Passenger System
-- [ ] Minifigures wait at stations
-- [ ] Board train when it stops
-- [ ] Exit at destination station
-- [ ] Track passenger count per train
 
 ---
 
@@ -107,36 +126,31 @@ Recreating LEGO Loco (1998) in C++ with raylib.
 
 ---
 
-## Milestone 6: User Interface
+## Milestone 6: Minifigures
 
-### 6.1 Toy Box (Build Menu)
-- [ ] Toggle build mode on/off
-- [ ] Category tabs (tracks, buildings, scenery)
-- [ ] Item selection with preview
-- [ ] Rotation control for selected item
+### 6.1 Basic Minifigure
+- [ ] Minifigure sprite with animations (idle, walk)
+- [ ] Spawn from houses
+- [ ] Random wandering AI
+- [ ] Pathfinding on walkable areas
 
-### 6.2 Game HUD
-- [ ] Current tool/selection indicator
-- [ ] Mini-map (optional for v1)
-- [ ] Train list panel
-- [ ] Pause/play simulation toggle
+### 6.2 Minifigure Interaction
+- [ ] Pick up minifigure with mouse
+- [ ] Drop minifigure at new location
+- [ ] Minifigure walks to nearest station
+- [ ] Board train at station
 
-### 6.3 Interaction Feedback
-- [ ] Hover highlights on tiles
-- [ ] Selection indicators
-- [ ] Placement ghost preview
-- [ ] Error messages for invalid actions
+### 6.3 Passenger System
+- [ ] Minifigures wait at stations
+- [ ] Board train when it stops
+- [ ] Exit at destination station
+- [ ] Track passenger count per train
 
 ---
 
 ## Milestone 7: Simulation Loop
 
-### 7.1 Game States
-- [ ] Build mode (simulation paused, can edit)
-- [ ] Play mode (simulation running)
-- [ ] Seamless switching between modes
-
-### 7.2 Time System
+### 7.1 Time System
 - [ ] Day/night cycle (visual only)
 - [ ] Simulation tick rate
 - [ ] Pause/speed controls
@@ -159,7 +173,6 @@ Recreating LEGO Loco (1998) in C++ with raylib.
 
 ### 8.3 Quality of Life
 - [ ] Undo/redo for building
-- [ ] Bulldozer tool (mass removal)
 - [ ] Keyboard shortcuts
 - [ ] Settings menu (volume, resolution)
 
