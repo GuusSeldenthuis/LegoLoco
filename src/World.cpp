@@ -41,7 +41,8 @@ bool World::Save(const std::string& filepath) const {
                 first = false;
                 file << "    {\"x\": " << x
                      << ", \"y\": " << y
-                     << ", \"type\": " << static_cast<int>(tile.type) << "}";
+                     << ", \"type\": " << static_cast<int>(tile.type)
+                     << ", \"rotation\": " << tile.rotation << "}";
             }
         }
     }
@@ -101,9 +102,18 @@ bool World::Load(const std::string& filepath) {
         size_t typePos = content.find("\"type\":", pos);
         int type = std::stoi(content.substr(typePos + 7));
 
+        // Parse rotation (optional, defaults to 0)
+        float rotation = 0.0f;
+        size_t nextBrace = content.find("}", pos);
+        size_t rotPos = content.find("\"rotation\":", pos);
+        if (rotPos != std::string::npos && rotPos < nextBrace) {
+            rotation = std::stof(content.substr(rotPos + 11));
+        }
+
         // Set tile if within bounds
         if (x >= 0 && x < cols && y >= 0 && y < rows) {
             tiles[y][x].type = static_cast<TileType>(type);
+            tiles[y][x].rotation = rotation;
         }
 
         pos++;
@@ -148,7 +158,7 @@ void World::ClearMultiTile(int x, int y) {
     }
 }
 
-void World::SetTile(int x, int y, TileType type) {
+void World::SetTile(int x, int y, TileType type, float rotation) {
     int w = GetTileWidth(type);
     int h = GetTileHeight(type);
 
@@ -175,6 +185,7 @@ void World::SetTile(int x, int y, TileType type) {
             Tile& t = tiles[y + dy][x + dx];
             t.type = type;
             t.connections = CONN_NONE;
+            t.rotation = rotation;
             t.isAnchor = (dx == 0 && dy == 0);
             t.anchorOffsetX = -dx;
             t.anchorOffsetY = -dy;
@@ -189,6 +200,8 @@ uint8_t World::CalculateConnections(int x, int y) const {
 
     const Tile& tile = tiles[y][x];
     if (tile.type == TileType::Empty || tile.type == TileType::Path) return CONN_NONE;
+    // Track tiles use manual rotation, not auto-connection
+    if (tile.type == TileType::Track || tile.type == TileType::TrackCorner) return CONN_NONE;
     if (!tile.isAnchor) return CONN_NONE;  // Only anchors track connections
 
     TileType myType = tile.type;
@@ -289,9 +302,22 @@ void World::Render(GameCamera& camera, TileTextures& textures) {
             float renderW = TILE_SIZE * w * camera.zoom;
             float renderH = TILE_SIZE * h * camera.zoom;
 
-            // Get shape and rotation based on connections
-            TileShape shape = (tile.type == TileType::Path) ? TileShape::Single : GetTileShape(tile.connections);
-            float rotation = GetTileRotation(tile.connections);
+            // Get shape and rotation
+            TileShape shape;
+            float rotation;
+            if (tile.type == TileType::Track) {
+                shape = TileShape::Straight;
+                rotation = tile.rotation;
+            } else if (tile.type == TileType::TrackCorner) {
+                shape = TileShape::Corner;
+                rotation = tile.rotation;
+            } else if (tile.type == TileType::Path) {
+                shape = TileShape::Single;
+                rotation = 0.0f;
+            } else {
+                shape = GetTileShape(tile.connections);
+                rotation = GetTileRotation(tile.connections);
+            }
 
             if (textures.HasTexture(tile.type, shape)) {
                 Texture2D tex = textures.Get(tile.type, shape);

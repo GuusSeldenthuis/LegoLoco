@@ -28,7 +28,7 @@ private:
 public:
     World(int rows, int cols);
 
-    void SetTile(int x, int y, TileType type);
+    void SetTile(int x, int y, TileType type, float rotation = 0.0f);
     Tile GetTile(int x, int y) const;
     void Render(GameCamera& camera, TileTextures& textures);
     void RenderBuildings(GameCamera& camera, BuildingTextures& textures);

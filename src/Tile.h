@@ -19,7 +19,8 @@ enum class TileType {
     Empty,
     Path,
     Road,
-    Track
+    Track,
+    TrackCorner
 };
 
 // Get tile dimensions (most tiles are 1x1, roads are 2x2)
@@ -29,6 +30,7 @@ int GetTileHeight(TileType type);
 struct Tile {
     TileType type = TileType::Empty;
     uint8_t connections = CONN_NONE;
+    float rotation = 0.0f;  // Manual rotation for track pieces
     // For multi-tile types: true if this is the anchor (top-left), false if part of larger tile
     bool isAnchor = true;
     // For non-anchor cells: offset to the anchor cell

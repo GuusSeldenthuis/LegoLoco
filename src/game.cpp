@@ -46,9 +46,10 @@ int main() {
     GameCamera camera;
 
     TileType selectedTile = TileType::Path;
-    const TileType tileTypes[] = { TileType::Empty, TileType::Path, TileType::Road, TileType::Track };
-    const int tileTypeCount = 4;
+    const TileType tileTypes[] = { TileType::Empty, TileType::Path, TileType::Road, TileType::Track, TileType::TrackCorner };
+    const int tileTypeCount = 5;
     int selectedIndex = 1;
+    float previewRotation = 0.0f;
 
     // Building/placeable selection
     BuildingType selectedBuilding = BuildingType::None;
@@ -93,15 +94,16 @@ int main() {
         }
 
         // Tile selection with number keys
-        if (IsKeyPressed(KEY_ONE))   { selectedIndex = 0; selectedTile = tileTypes[0]; buildingMode = false; }
-        if (IsKeyPressed(KEY_TWO))   { selectedIndex = 1; selectedTile = tileTypes[1]; buildingMode = false; }
-        if (IsKeyPressed(KEY_THREE)) { selectedIndex = 2; selectedTile = tileTypes[2]; buildingMode = false; }
-        if (IsKeyPressed(KEY_FOUR))  { selectedIndex = 3; selectedTile = tileTypes[3]; buildingMode = false; }
+        if (IsKeyPressed(KEY_ONE))   { selectedIndex = 0; selectedTile = tileTypes[0]; buildingMode = false; previewRotation = 0.0f; }
+        if (IsKeyPressed(KEY_TWO))   { selectedIndex = 1; selectedTile = tileTypes[1]; buildingMode = false; previewRotation = 0.0f; }
+        if (IsKeyPressed(KEY_THREE)) { selectedIndex = 2; selectedTile = tileTypes[2]; buildingMode = false; previewRotation = 0.0f; }
+        if (IsKeyPressed(KEY_FOUR))  { selectedIndex = 3; selectedTile = tileTypes[3]; buildingMode = false; previewRotation = 0.0f; }
+        if (IsKeyPressed(KEY_FIVE))  { selectedIndex = 4; selectedTile = tileTypes[4]; buildingMode = false; previewRotation = 0.0f; }
 
         // Placeable selection
-        if (IsKeyPressed(KEY_FIVE))  { selectedBuilding = BuildingType::RedHouse; buildingMode = true; }
-        if (IsKeyPressed(KEY_SIX))   { selectedBuilding = BuildingType::House; buildingMode = true; }
-        if (IsKeyPressed(KEY_SEVEN)) { selectedBuilding = BuildingType::PizzaShop; buildingMode = true; }
+        if (IsKeyPressed(KEY_SIX))   { selectedBuilding = BuildingType::RedHouse; buildingMode = true; }
+        if (IsKeyPressed(KEY_SEVEN)) { selectedBuilding = BuildingType::House; buildingMode = true; }
+        if (IsKeyPressed(KEY_EIGHT)) { selectedBuilding = BuildingType::PizzaShop; buildingMode = true; }
 
         // Debug toggle
         if (IsKeyPressed(KEY_F1)) showDebug = !showDebug;
@@ -114,36 +116,41 @@ int main() {
         bool validHover = hoverX >= 0 && hoverX < world.GetCols() && hoverY >= 0 && hoverY < world.GetRows();
 
         bool tilesChanged = false;
+        bool isTrackType = (selectedTile == TileType::Track || selectedTile == TileType::TrackCorner);
 
         // Place tile or building with left click
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && validHover) {
             if (buildingMode) {
                 world.PlaceBuilding(selectedBuilding, hoverX, hoverY);
             } else {
-                world.SetTile(hoverX, hoverY, selectedTile);
+                world.SetTile(hoverX, hoverY, selectedTile, previewRotation);
                 tilesChanged = true;
             }
         }
 
-        // Continuous tile placement (drag) - only for 1x1 tiles, not buildings or multi-tiles
+        // Continuous tile placement (drag) - only for non-track 1x1 tiles
         bool is1x1Tile = (GetTileWidth(selectedTile) == 1 && GetTileHeight(selectedTile) == 1);
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && validHover && !buildingMode && is1x1Tile) {
-            world.SetTile(hoverX, hoverY, selectedTile);
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && validHover && !buildingMode && is1x1Tile && !isTrackType) {
+            world.SetTile(hoverX, hoverY, selectedTile, previewRotation);
             tilesChanged = true;
         }
 
-        // Remove tile or building with right click
-        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && validHover) {
-            if (buildingMode) {
-                world.RemoveBuilding(hoverX, hoverY);
-            } else {
-                world.SetTile(hoverX, hoverY, TileType::Empty);
-                tilesChanged = true;
+        // Right click: rotate preview for tracks, remove for everything else
+        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+            if (!buildingMode && isTrackType) {
+                previewRotation = fmodf(previewRotation + 90.0f, 360.0f);
+            } else if (validHover) {
+                if (buildingMode) {
+                    world.RemoveBuilding(hoverX, hoverY);
+                } else {
+                    world.SetTile(hoverX, hoverY, TileType::Empty);
+                    tilesChanged = true;
+                }
             }
         }
 
-        // Continuous removal (drag) - only for tiles
-        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && validHover && !buildingMode) {
+        // Continuous removal (drag) - only for non-track tiles
+        if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT) && !IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && validHover && !buildingMode && !isTrackType) {
             world.SetTile(hoverX, hoverY, TileType::Empty);
             tilesChanged = true;
         }
@@ -205,13 +212,20 @@ int main() {
                 Color tint = canPlace ? Color{100, 255, 100, 150} : Color{255, 100, 100, 150};
                 Color outlineColor = canPlace ? GREEN : RED;
 
-                // Show tile texture preview with tint (use straight shape for preview)
-                TileShape previewShape = (selectedTile == TileType::Path) ? TileShape::Single : TileShape::Straight;
+                // Determine preview shape based on tile type
+                TileShape previewShape;
+                if (selectedTile == TileType::Path) previewShape = TileShape::Single;
+                else if (selectedTile == TileType::TrackCorner) previewShape = TileShape::Corner;
+                else previewShape = TileShape::Straight;
+
                 if (tileTextures.HasTexture(selectedTile, previewShape)) {
                     Texture2D tex = tileTextures.Get(selectedTile, previewShape);
                     Rectangle source = { 0, 0, (float)tex.width, (float)tex.height };
-                    Rectangle dest = { pos.x, pos.y, previewW, previewH };
-                    DrawTexturePro(tex, source, dest, {0, 0}, 0.0f, tint);
+                    float centerX = pos.x + previewW / 2;
+                    float centerY = pos.y + previewH / 2;
+                    Rectangle dest = { centerX, centerY, previewW, previewH };
+                    Vector2 origin = { previewW / 2, previewH / 2 };
+                    DrawTexturePro(tex, source, dest, origin, previewRotation, tint);
                 } else {
                     DrawRectangle((int)pos.x, (int)pos.y, (int)previewW, (int)previewH, tint);
                 }
@@ -224,8 +238,8 @@ int main() {
         }
 
         // UI - Tile/Building palette
-        DrawRectangle(10, 10, 160, 220, Color{0, 0, 0, 150});
-        DrawText("Tiles (1-4):", 20, 20, 16, WHITE);
+        DrawRectangle(10, 10, 180, 240, Color{0, 0, 0, 150});
+        DrawText("Tiles (1-5):", 20, 20, 16, WHITE);
         for (int i = 0; i < tileTypeCount; i++) {
             int y = 45 + i * 18;
             Color textColor = (!buildingMode && i == selectedIndex) ? YELLOW : WHITE;
@@ -234,18 +248,22 @@ int main() {
         }
 
         const BuildingType buildingTypes[] = { BuildingType::RedHouse, BuildingType::House, BuildingType::PizzaShop };
-        DrawText("Placeables (5-7):", 20, 125, 16, WHITE);
+        DrawText("Placeables (6-8):", 20, 143, 16, WHITE);
         for (int i = 0; i < 3; i++) {
-            int y = 150 + i * 18;
+            int y = 168 + i * 18;
             Color textColor = (buildingMode && selectedBuilding == buildingTypes[i]) ? YELLOW : WHITE;
             const char* marker = (buildingMode && selectedBuilding == buildingTypes[i]) ? "> " : "  ";
-            DrawText(TextFormat("%s%d: %s", marker, i + 5, GetBuildingName(buildingTypes[i])), 20, y, 14, textColor);
+            DrawText(TextFormat("%s%d: %s", marker, i + 6, GetBuildingName(buildingTypes[i])), 20, y, 14, textColor);
         }
 
         // Debug info
         DrawRectangle(5, screenHeight - 55, screenWidth - 10, 50, Color{0, 0, 0, 150});
         DrawText(TextFormat("Grid: %d, %d", hoverX, hoverY), 10, screenHeight - 50, 16, WHITE);
-        DrawText("LMB: Place | RMB: Remove | MMB: Pan | Scroll: Zoom | Ctrl+S: Save | Ctrl+L: Load | F1: Debug", 10, screenHeight - 25, 14, LIGHTGRAY);
+        if (!buildingMode && isTrackType) {
+            DrawText(TextFormat("LMB: Place | RMB: Rotate (%d) | MMB: Pan | Scroll: Zoom | Ctrl+S/L: Save/Load | F1: Debug", (int)previewRotation), 10, screenHeight - 25, 14, LIGHTGRAY);
+        } else {
+            DrawText("LMB: Place | RMB: Remove | MMB: Pan | Scroll: Zoom | Ctrl+S/L: Save/Load | F1: Debug", 10, screenHeight - 25, 14, LIGHTGRAY);
+        }
 
         // Status message
         if (!statusMessage.empty()) {

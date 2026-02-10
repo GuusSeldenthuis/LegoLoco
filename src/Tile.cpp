@@ -6,6 +6,7 @@ const char* GetTileName(TileType type) {
         case TileType::Path:  return "Path";
         case TileType::Road:  return "Road";
         case TileType::Track: return "Track";
+        case TileType::TrackCorner: return "Track Corner";
         default:              return "Unknown";
     }
 }
@@ -15,6 +16,7 @@ Color GetTileColor(TileType type) {
         case TileType::Path:  return LIME;
         case TileType::Road:  return GRAY;
         case TileType::Track: return BROWN;
+        case TileType::TrackCorner: return BROWN;
         default:              return BLANK;
     }
 }
@@ -22,6 +24,7 @@ Color GetTileColor(TileType type) {
 int GetTileWidth(TileType type) {
     switch (type) {
         case TileType::Road: return 2;
+        case TileType::TrackCorner: return 3;
         default: return 1;
     }
 }
@@ -29,6 +32,7 @@ int GetTileWidth(TileType type) {
 int GetTileHeight(TileType type) {
     switch (type) {
         case TileType::Road: return 2;
+        case TileType::TrackCorner: return 3;
         default: return 1;
     }
 }
@@ -104,6 +108,9 @@ bool CanTilesConnect(TileType a, TileType b) {
     // Road and Path can connect (sidewalk next to road)
     if ((a == TileType::Road && b == TileType::Path) ||
         (a == TileType::Path && b == TileType::Road)) return true;
+    // Track and TrackCorner connect to each other
+    if ((a == TileType::Track || a == TileType::TrackCorner) &&
+        (b == TileType::Track || b == TileType::TrackCorner)) return true;
     return false;
 }
 
@@ -124,7 +131,7 @@ void TileTextures::Load() {
 
     // Track base textures
     textures[GetShapeKey(TileType::Track, TileShape::Straight)] = LoadTexture("resources/railHorizontal.png");
-    textures[GetShapeKey(TileType::Track, TileShape::Corner)] = LoadTexture("resources/railTurnRightDown.png");
+    textures[GetShapeKey(TileType::TrackCorner, TileShape::Corner)] = LoadTexture("resources/railTurnRightDown.png");
 
     loaded = true;
 }
