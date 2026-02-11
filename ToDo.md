@@ -116,7 +116,6 @@ The Toy Box is a floating panel with a 3-wide x 5-high button grid:
 - [ ] Locomotive sprite
 - [ ] Cargo/passenger carriage sprites
 - [ ] Multiple carriages following locomotive
-- [ ] Carriage connection physics (follow with delay)
 
 ### 5.3 Train Control
 - [ ] Select train by clicking
@@ -151,7 +150,6 @@ The Toy Box is a floating panel with a 3-wide x 5-high button grid:
 ## Milestone 7: Simulation Loop
 
 ### 7.1 Time System
-- [ ] Day/night cycle (visual only)
 - [ ] Simulation tick rate
 - [ ] Pause/speed controls
 
@@ -160,21 +158,19 @@ The Toy Box is a floating panel with a 3-wide x 5-high button grid:
 ## Milestone 8: Polish & First Playable
 
 ### 8.1 Audio
-- [ ] Background music
-- [ ] Train sounds (moving, whistle, stopping)
+- [ ] Background music?
+- [ ] Train sounds (moving, whistle)
 - [ ] UI click sounds
 - [ ] Ambient sounds
 
 ### 8.2 Visual Polish
-- [ ] Replace placeholder sprites with LEGO-style art
-- [ ] Particle effects (steam, smoke)
-- [ ] Smooth camera transitions
-- [ ] Animation polish
+- [ ] Particle effects (loc-steam, destruction animation)
 
 ### 8.3 Quality of Life
 - [ ] Undo/redo for building
-- [ ] Keyboard shortcuts
+- [ ] Keyboard shortcuts?
 - [ ] Settings menu (volume, resolution)
+- [ ] That weird zoom-glass function
 
 ---
 
