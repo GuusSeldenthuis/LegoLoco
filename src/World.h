@@ -22,7 +22,6 @@ private:
 
     // Update connections for a tile and its neighbors
     void UpdateTileConnections(int x, int y);
-    void UpdateAllConnections();
     uint8_t CalculateConnections(int x, int y) const;
 
 public:
@@ -40,9 +39,11 @@ public:
     Building* GetBuildingAt(int gridX, int gridY);
     const std::vector<Building>& GetBuildings() const { return buildings; }
 
-    bool Save(const std::string& filepath) const;
-    bool Load(const std::string& filepath);
     void Clear();
+
+    // Raw tile setter for loading (no connection update, no multi-tile handling)
+    void SetTileRaw(int x, int y, TileType type, float rotation);
+    void UpdateAllConnections();
 
     void RebuildPathGraph();
     void RenderPathDebug(GameCamera& camera);

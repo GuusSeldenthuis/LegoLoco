@@ -3,6 +3,7 @@
 #include "Building.h"
 #include "Camera.h"
 #include "World.h"
+#include "SaveFileHandler.h"
 #include <cmath>
 #include <string>
 
@@ -43,6 +44,7 @@ int main() {
     int worldCols = screenWidth / TILE_SIZE;
     int worldRows = screenHeight / TILE_SIZE;
     World world(worldRows, worldCols);
+    SaveFileHandler saveHandler;
     GameCamera camera;
 
     TileType selectedTile = TileType::Path;
@@ -74,7 +76,7 @@ int main() {
 
         // Save with Ctrl+S
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) {
-            if (world.Save(SAVE_PATH)) {
+            if (saveHandler.Save(world, SAVE_PATH)) {
                 statusMessage = "World saved!";
             } else {
                 statusMessage = "Failed to save!";
@@ -84,7 +86,7 @@ int main() {
 
         // Load with Ctrl+L
         if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_L)) {
-            if (world.Load(SAVE_PATH)) {
+            if (saveHandler.Load(world, SAVE_PATH)) {
                 statusMessage = "World loaded!";
                 world.RebuildPathGraph();
             } else {
