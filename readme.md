@@ -4,7 +4,7 @@
 
 ![Screenshot](images/Screenshot_02.png)
 
-A game project using raylib.
+An open-source recreation of [LEGO Loco (1998)](https://en.wikipedia.org/wiki/Lego_Loco), the LEGO train-building sandbox game, built with C++ and raylib.
 
 ## Assets
 
@@ -28,34 +28,20 @@ Or if already cloned without submodules:
 git submodule update --init --recursive
 ```
 
-## Build
+## Build & Run
 
-### Make
 ```bash
-make
+make          # Build raylib (first time) and the project
+make run      # Build and run
+make clean    # Remove only the game binary
+make clean-all  # Remove binary and clean raylib build
 ```
 
-### CMake
+### CMake (alternative)
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
-```
-
-Both options automatically build raylib from source on first run.
-
-## Run
-
-```bash
 ./bin/lego_loco
-# or
-make run
-```
-
-## Clean
-
-```bash
-make clean      # Remove only the game binary
-make clean-all  # Remove binary and rebuild raylib
 ```
 
 ## Acknowledgments
