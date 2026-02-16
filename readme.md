@@ -8,7 +8,7 @@ An open-source recreation of [LEGO Loco (1998)](https://en.wikipedia.org/wiki/Le
 
 ## Assets
 
-Sprites are temporarily borrowed from [MartinSStewart/Lego-Loco-Remake](https://github.com/MartinSStewart/Lego-Loco-Remake) and will be replaced with original assets.
+Some sprites are temporarily borrowed from [MartinSStewart/Lego-Loco-Remake](https://github.com/MartinSStewart/Lego-Loco-Remake) and will be replaced with original assets.
 
 ## Dependencies (Linux)
 
