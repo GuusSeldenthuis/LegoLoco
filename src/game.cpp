@@ -40,6 +40,19 @@ int main() {
     BuildingTextures buildingTextures;
     buildingTextures.Load();
 
+    // Load toybox texture (first frame from sprite sheet, remove magenta background)
+    Image toyboxImage = LoadImage("resources/raw/toybox.bmp");
+    ImageCrop(&toyboxImage, {53, 50, 61, 55});
+    ImageColorReplace(&toyboxImage, {255, 0, 255, 255}, {0, 0, 0, 0});
+    ImageFormat(&toyboxImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    Texture2D toyboxTexture = LoadTextureFromImage(toyboxImage);
+    UnloadImage(toyboxImage);
+
+    // Toybox drag state
+    Vector2 toyboxPos = {(float)(screenWidth - toyboxTexture.width - 20), 20.0f};
+    bool toyboxDragging = false;
+    Vector2 toyboxDragOffset = {0, 0};
+
     // Calculate world size based on background resolution
     int worldCols = screenWidth / TILE_SIZE;
     int worldRows = screenHeight / TILE_SIZE;
@@ -110,8 +123,23 @@ int main() {
         // Debug toggle
         if (IsKeyPressed(KEY_F1)) showDebug = !showDebug;
 
-        // Get hovered tile
+        // Toybox dragging
         Vector2 mousePos = GetMousePosition();
+        Rectangle toyboxRect = {toyboxPos.x, toyboxPos.y, (float)toyboxTexture.width, (float)toyboxTexture.height};
+        bool mouseOverToybox = CheckCollisionPointRec(mousePos, toyboxRect);
+
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && mouseOverToybox) {
+            toyboxDragging = true;
+            toyboxDragOffset = {mousePos.x - toyboxPos.x, mousePos.y - toyboxPos.y};
+        }
+        if (toyboxDragging) {
+            toyboxPos = {mousePos.x - toyboxDragOffset.x, mousePos.y - toyboxDragOffset.y};
+            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+                toyboxDragging = false;
+            }
+        }
+
+        // Get hovered tile
         Vector2 worldPos = ScreenToWorld(mousePos, camera.offset, camera.zoom);
         int hoverX = (int)floorf(worldPos.x);
         int hoverY = (int)floorf(worldPos.y);
@@ -120,8 +148,8 @@ int main() {
         bool tilesChanged = false;
         bool isTrackType = (selectedTile == TileType::Track || selectedTile == TileType::TrackCorner);
 
-        // Place tile or building with left click
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && validHover) {
+        // Place tile or building with left click (not when dragging toybox)
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && validHover && !toyboxDragging && !mouseOverToybox) {
             if (buildingMode) {
                 world.PlaceBuilding(selectedBuilding, hoverX, hoverY);
             } else {
@@ -132,7 +160,7 @@ int main() {
 
         // Continuous tile placement (drag) - only for non-track 1x1 tiles
         bool is1x1Tile = (GetTileWidth(selectedTile) == 1 && GetTileHeight(selectedTile) == 1);
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && validHover && !buildingMode && is1x1Tile && !isTrackType) {
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && validHover && !buildingMode && is1x1Tile && !isTrackType && !toyboxDragging) {
             world.SetTile(hoverX, hoverY, selectedTile, previewRotation);
             tilesChanged = true;
         }
@@ -239,6 +267,9 @@ int main() {
             }
         }
 
+        // Draw toybox
+        DrawTexture(toyboxTexture, (int)toyboxPos.x, (int)toyboxPos.y, WHITE);
+
         // UI - Tile/Building palette
         DrawRectangle(10, 10, 180, 240, Color{0, 0, 0, 150});
         DrawText("Tiles (1-5):", 20, 20, 16, WHITE);
@@ -277,6 +308,7 @@ int main() {
         EndDrawing();
     }
 
+    UnloadTexture(toyboxTexture);
     UnloadTexture(background);
     tileTextures.Unload();
     buildingTextures.Unload();
