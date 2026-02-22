@@ -6,10 +6,6 @@
 
 An open-source recreation of [LEGO Loco (1998)](https://en.wikipedia.org/wiki/Lego_Loco), the LEGO train-building sandbox game, built with C++ and raylib.
 
-## Assets
-
-Some sprites are temporarily borrowed from [MartinSStewart/Lego-Loco-Remake](https://github.com/MartinSStewart/Lego-Loco-Remake) and will be replaced with original assets.
-
 ## Dependencies (Linux)
 
 ```bash
