@@ -2,9 +2,30 @@
 
 [![Build & Release](https://github.com/GuusSeldenthuis/LegoLoco/actions/workflows/build.yml/badge.svg)](https://github.com/GuusSeldenthuis/LegoLoco/actions/workflows/build.yml)
 
+> **Early Development** — This is a one-man hobby project and is far from complete. Expect missing features, rough edges, and frequent breaking changes. Contributions and feedback are welcome, but please keep expectations in check.
+
 ![Screenshot](images/Screenshot_02.png)
 
 An open-source recreation of [LEGO Loco (1998)](https://en.wikipedia.org/wiki/Lego_Loco), the LEGO train-building sandbox game, built with C++ and raylib.
+
+## Roadmap
+
+The project is structured around 8 main milestones toward a first playable version.
+
+| Milestone | Status |
+|---|---|
+| 1. Core Engine — grid, tiles, camera, world save/load | Done |
+| 2. User Interface — main menu, toy box, game states | In progress |
+| 3. Buildings & Objects — placement, houses, stations, scenery | Partially done |
+| 4. Track System — switches, pathfinding, junctions | Partially done |
+| 5. Trains — movement, carriages, speed control | Not started |
+| 6. Minifigures — spawning, walking AI, train boarding | Not started |
+| 7. Simulation Loop — tick rate, pause/speed controls | Not started |
+| 8. Polish — audio, particles, undo/redo, settings | Not started |
+
+Further out: multiplayer (LAN), postcard system, seasons/weather, train customization, and easter eggs from the original game.
+
+See [ToDo.md](ToDo.md) for the full detailed task list.
 
 ## Dependencies (Linux)
 
