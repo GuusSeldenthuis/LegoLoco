@@ -40,18 +40,51 @@ int main() {
     BuildingTextures buildingTextures;
     buildingTextures.Load();
 
-    // Load toybox texture (first frame from sprite sheet, remove magenta background)
-    Image toyboxImage = LoadImage("resources/raw/toybox.bmp");
-    ImageCrop(&toyboxImage, {53, 50, 61, 55});
-    ImageColorReplace(&toyboxImage, {255, 0, 255, 255}, {0, 0, 0, 0});
-    ImageFormat(&toyboxImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
-    Texture2D toyboxTexture = LoadTextureFromImage(toyboxImage);
-    UnloadImage(toyboxImage);
+    // Load toybox animation frames from sprite sheet (27 frames, 167px cells)
+    const int TOYBOX_FRAME_COUNT = 27;
+    const int TOYBOX_CELL_WIDTH = 167;
+    Texture2D toyboxFrames[TOYBOX_FRAME_COUNT];
+    {
+        Image sheet = LoadImage("resources/raw/toybox.bmp");
+        ImageFormat(&sheet, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+        ImageColorReplace(&sheet, {255, 0, 255, 255}, {0, 0, 0, 0});
+        for (int i = 0; i < TOYBOX_FRAME_COUNT; i++)
+        {
+            Image frame = ImageCopy(sheet);
+            ImageCrop(&frame, {(float)(i*TOYBOX_CELL_WIDTH), 0,
+                               (float)TOYBOX_CELL_WIDTH, (float)sheet.height});
+            toyboxFrames[i] = LoadTextureFromImage(frame);
+            UnloadImage(frame);
+        }
+        UnloadImage(sheet);
+    }
 
-    // Toybox drag state
-    Vector2 toyboxPos = {(float)(screenWidth - toyboxTexture.width - 20), 20.0f};
+    // Load tray texture (fully opened toybox state)
+    Image trayImage = LoadImage("resources/raw/tray.bmp");
+    ImageFormat(&trayImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    ImageColorReplace(&trayImage, {255, 0, 255, 255}, {0, 0, 0, 0});
+    Texture2D trayTexture = LoadTextureFromImage(trayImage);
+    UnloadImage(trayImage);
+
+    // Toybox state
+    enum ToyboxState { TOYBOX_CLOSED, TOYBOX_OPENING, TOYBOX_OPEN, TOYBOX_CLOSING };
+    ToyboxState toyboxState = TOYBOX_CLOSED;
+    int toyboxFrame = 0;
+    float toyboxAnimTimer = 0.0f;
+    const float TOYBOX_FRAME_TIME = 0.03f;
+
+    // Toybox position: anchor is bottom-center of frame 0 content
+    // Frame 0 content within its 167px cell: offset (53,50), size 61x55, bottom at y=104
+    // Anchor = bottom-center = (83, 104) within the cell
+    const int TOYBOX_ANCHOR_X = 83;
+    const int TOYBOX_ANCHOR_Y = 105;
+    Vector2 toyboxAnchor = {(float)(screenWidth - TOYBOX_ANCHOR_X - 20),
+                            (float)(20 + TOYBOX_ANCHOR_Y)};
     bool toyboxDragging = false;
     Vector2 toyboxDragOffset = {0, 0};
+    Vector2 toyboxMouseDownPos = {0, 0};
+    bool toyboxMouseDown = false;
+    const float TOYBOX_DRAG_THRESHOLD = 4.0f;
 
     // Calculate world size based on background resolution
     int worldCols = screenWidth / TILE_SIZE;
@@ -123,20 +156,96 @@ int main() {
         // Debug toggle
         if (IsKeyPressed(KEY_F1)) showDebug = !showDebug;
 
-        // Toybox dragging
+        // Toybox animation update
+        if (toyboxState == TOYBOX_OPENING || toyboxState == TOYBOX_CLOSING)
+        {
+            toyboxAnimTimer += dt;
+            while (toyboxAnimTimer >= TOYBOX_FRAME_TIME)
+            {
+                toyboxAnimTimer -= TOYBOX_FRAME_TIME;
+                if (toyboxState == TOYBOX_OPENING)
+                {
+                    toyboxFrame++;
+                    if (toyboxFrame >= TOYBOX_FRAME_COUNT - 1)
+                    {
+                        toyboxFrame = TOYBOX_FRAME_COUNT - 1;
+                        toyboxState = TOYBOX_OPEN;
+                    }
+                }
+                else
+                {
+                    toyboxFrame--;
+                    if (toyboxFrame <= 0)
+                    {
+                        toyboxFrame = 0;
+                        toyboxState = TOYBOX_CLOSED;
+                    }
+                }
+            }
+        }
+
+        // Compute current toybox draw rect from anchor
+        // When open, use tray; otherwise use current animation frame
         Vector2 mousePos = GetMousePosition();
-        Rectangle toyboxRect = {toyboxPos.x, toyboxPos.y, (float)toyboxTexture.width, (float)toyboxTexture.height};
+        Texture2D currentToyboxTex = (toyboxState == TOYBOX_OPEN)
+            ? trayTexture : toyboxFrames[toyboxFrame];
+        float toyboxDrawX = toyboxAnchor.x - TOYBOX_ANCHOR_X;
+        float toyboxDrawY = toyboxAnchor.y - currentToyboxTex.height;
+        Rectangle toyboxRect = {toyboxDrawX, toyboxDrawY,
+                                (float)currentToyboxTex.width,
+                                (float)currentToyboxTex.height};
         bool mouseOverToybox = CheckCollisionPointRec(mousePos, toyboxRect);
 
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && mouseOverToybox) {
-            toyboxDragging = true;
-            toyboxDragOffset = {mousePos.x - toyboxPos.x, mousePos.y - toyboxPos.y};
+        // Toybox click vs drag detection
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && mouseOverToybox)
+        {
+            toyboxMouseDown = true;
+            toyboxMouseDownPos = mousePos;
+            toyboxDragOffset = {mousePos.x - toyboxAnchor.x, mousePos.y - toyboxAnchor.y};
         }
-        if (toyboxDragging) {
-            toyboxPos = {mousePos.x - toyboxDragOffset.x, mousePos.y - toyboxDragOffset.y};
-            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-                toyboxDragging = false;
+        if (toyboxMouseDown && !toyboxDragging)
+        {
+            float dx = mousePos.x - toyboxMouseDownPos.x;
+            float dy = mousePos.y - toyboxMouseDownPos.y;
+            if (dx*dx + dy*dy > TOYBOX_DRAG_THRESHOLD*TOYBOX_DRAG_THRESHOLD)
+            {
+                toyboxDragging = true;
             }
+        }
+        if (toyboxDragging)
+        {
+            toyboxAnchor = {mousePos.x - toyboxDragOffset.x, mousePos.y - toyboxDragOffset.y};
+        }
+        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && toyboxMouseDown)
+        {
+            if (!toyboxDragging)
+            {
+                // Click detected: toggle toybox state
+                if (toyboxState == TOYBOX_CLOSED)
+                {
+                    toyboxState = TOYBOX_OPENING;
+                    toyboxAnimTimer = 0.0f;
+                }
+                else if (toyboxState == TOYBOX_OPEN)
+                {
+                    toyboxState = TOYBOX_CLOSING;
+                    toyboxFrame = TOYBOX_FRAME_COUNT - 1;
+                    toyboxAnimTimer = 0.0f;
+                }
+                // If already animating, reverse direction
+                else if (toyboxState == TOYBOX_OPENING)
+                {
+                    toyboxState = TOYBOX_CLOSING;
+                    toyboxAnimTimer = 0.0f;
+                }
+                else if (toyboxState == TOYBOX_CLOSING)
+                {
+                    toyboxState = TOYBOX_OPENING;
+                    toyboxAnimTimer = 0.0f;
+                }
+            }
+            toyboxDragging = false;
+            toyboxMouseDown = false;
         }
 
         // Get hovered tile
@@ -267,8 +376,8 @@ int main() {
             }
         }
 
-        // Draw toybox
-        DrawTexture(toyboxTexture, (int)toyboxPos.x, (int)toyboxPos.y, WHITE);
+        // Draw toybox (anchored at bottom-center)
+        DrawTexture(currentToyboxTex, (int)toyboxDrawX, (int)toyboxDrawY, WHITE);
 
         // UI - Tile/Building palette
         DrawRectangle(10, 10, 180, 240, Color{0, 0, 0, 150});
@@ -308,7 +417,8 @@ int main() {
         EndDrawing();
     }
 
-    UnloadTexture(toyboxTexture);
+    for (int i = 0; i < TOYBOX_FRAME_COUNT; i++) UnloadTexture(toyboxFrames[i]);
+    UnloadTexture(trayTexture);
     UnloadTexture(background);
     tileTextures.Unload();
     buildingTextures.Unload();
