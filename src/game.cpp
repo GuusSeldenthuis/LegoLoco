@@ -73,13 +73,13 @@ int main() {
     float toyboxAnimTimer = 0.0f;
     const float TOYBOX_FRAME_TIME = 0.03f;
 
-    // Toybox position: anchor is bottom-center of frame 0 content
-    // Frame 0 content within its 167px cell: offset (53,50), size 61x55, bottom at y=104
-    // Anchor = bottom-center = (83, 104) within the cell
+    // Toybox position: anchor is the top-left of the 167x248 cell
+    // All frames are full-cell textures (167x248); content sits within them transparently
     const int TOYBOX_ANCHOR_X = 83;
-    const int TOYBOX_ANCHOR_Y = 105;
+    const int TOYBOX_CELL_HEIGHT = 248;
+    // Anchor Y = screen Y of the cell bottom (cell drawn from anchor.y-CELL_HEIGHT to anchor.y)
     Vector2 toyboxAnchor = {(float)(screenWidth - TOYBOX_ANCHOR_X - 20),
-                            (float)(20 + TOYBOX_ANCHOR_Y)};
+                            (float)(20 + TOYBOX_CELL_HEIGHT)};
     bool toyboxDragging = false;
     Vector2 toyboxDragOffset = {0, 0};
     Vector2 toyboxMouseDownPos = {0, 0};
@@ -190,7 +190,7 @@ int main() {
         Texture2D currentToyboxTex = (toyboxState == TOYBOX_OPEN)
             ? trayTexture : toyboxFrames[toyboxFrame];
         float toyboxDrawX = toyboxAnchor.x - TOYBOX_ANCHOR_X;
-        float toyboxDrawY = toyboxAnchor.y - currentToyboxTex.height;
+        float toyboxDrawY = toyboxAnchor.y - TOYBOX_CELL_HEIGHT;
         Rectangle toyboxRect = {toyboxDrawX, toyboxDrawY,
                                 (float)currentToyboxTex.width,
                                 (float)currentToyboxTex.height};
